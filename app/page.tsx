@@ -11,6 +11,7 @@ export default async function Home() {
   }
   return (
     <main>
+      <h1>Dashboard</h1>
       <h2>Server Session</h2>
       <pre>{JSON.stringify(session)}</pre>
       <h2>Client Call</h2>

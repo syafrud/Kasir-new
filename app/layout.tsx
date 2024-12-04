@@ -1,4 +1,5 @@
 "use client";
+import SidebarLink from "@/components/ui/link";
 import { LogoutButton } from "./auth";
 import "./globals.css";
 import { Providers } from "./providers";
@@ -32,8 +33,8 @@ export default function RootLayout({
               </button>
             </div>
             <div className="flex justify-between items-center w-full px-5">
-              <a href="#" className="text-white font-bold">
-                Menu
+              <a href="/ " className="text-white font-bold">
+                Kasir
               </a>
               <div className="flex items-center gap-4">
                 <a
@@ -76,31 +77,16 @@ export default function RootLayout({
                     isSidebarExpanded || isHovering ? "block" : "hidden"
                   }`}
                 >
-                  Menu Utama
+                  Dashboard
                 </div>
               </li>
 
-              <li className="flex items-center gap-4 px-3 py-2 hover:bg-[#505761] rounded-md transition">
-                <Home size={20} className="text-white" />
-                <span
-                  className={`text-white ${
-                    isSidebarExpanded || isHovering ? "block" : "hidden"
-                  }`}
-                >
-                  Dashboard
-                </span>
-              </li>
-
-              <li className="flex items-center gap-4 px-3 py-2 hover:bg-[#505761] rounded-md transition">
-                <BarChart size={20} className="text-white" />
-                <span
-                  className={`text-white ${
-                    isSidebarExpanded || isHovering ? "block" : "hidden"
-                  }`}
-                >
-                  Rekap
-                </span>
-              </li>
+              <SidebarLink
+                href="/kategori-produk"
+                icon={<BarChart size={20} />}
+                label="Kategori Produk"
+                isExpanded={isSidebarExpanded || isHovering}
+              />
             </ul>
           </div>
 
@@ -108,7 +94,7 @@ export default function RootLayout({
           <div
             className={`${
               isSidebarExpanded ? "pl-[225px]" : "pl-[70px]"
-            } pt-[70px] transition-all duration-300 min-w-max`}
+            } pt-[70px] transition-all duration-300 max-w-max w-screen`}
           >
             <div className="p-10">
               <Providers>{children}</Providers>
