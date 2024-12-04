@@ -2,6 +2,7 @@ import prisma from "@/lib/db";
 import { compare } from "bcrypt";
 import NextAuth, { type NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { randomBytes } from "crypto";
 
 export const authOptions: NextAuthOptions = {
   pages: {
@@ -45,11 +46,14 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        // Generate a cryptographically secure random key
+        const randomKey = randomBytes(32).toString("hex");
+
         return {
           id: user.id + "",
           username: user.username,
           name: user.nama_user,
-          randomKey: "Hey cool",
+          randomKey: randomKey,
         };
       },
     }),
@@ -67,7 +71,6 @@ export const authOptions: NextAuthOptions = {
       };
     },
     jwt: ({ token, user }) => {
-      console.log("JWT Callback", { token, user });
       if (user) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const u = user as unknown as any;
