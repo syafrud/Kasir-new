@@ -3,27 +3,26 @@
 import { ReactNode } from "react";
 import Link from "next/link";
 
-interface KategoriProdukProps {
+interface SidebarLinkProps {
   href: string;
   icon: ReactNode;
   label: string;
   isExpanded: boolean;
 }
 
-export default function KategoriProduk({
+export default function SidebarLink({
   href,
   icon,
   label,
   isExpanded,
-}: KategoriProdukProps) {
+}: SidebarLinkProps) {
   return (
-    <li className="flex items-center gap-4 px-3 py-2 hover:bg-[#505761] rounded-md transition">
-      <div className="text-white">{icon}</div>
-      <Link
-        href={href}
-        className={`text-white ${isExpanded ? "block" : "hidden"}`}
-      >
-        {label}
+    <li className="hover:bg-[#505761] rounded-md transition">
+      <Link href={href} className="flex items-center gap-4 px-3 py-2">
+        <div className="text-white">{icon}</div>
+        <div className={`text-white ${isExpanded ? "block" : "hidden"}`}>
+          {label}
+        </div>
       </Link>
     </li>
   );

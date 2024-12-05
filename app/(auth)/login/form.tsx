@@ -8,7 +8,7 @@ import { useState } from "react";
 export const LoginForm = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const callbackUrl = searchParams.get("callbackUrl") || "/";
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [error, setError] = useState("");
