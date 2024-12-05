@@ -20,7 +20,7 @@ export async function middleware(req: NextRequest) {
     );
   }
 
-  // If user is on login/register and already authenticated, redirect to home
+  // If user is on login and already authenticated, redirect to home
   if (token && path === "/login") {
     return NextResponse.redirect(new URL("/", req.url));
   }

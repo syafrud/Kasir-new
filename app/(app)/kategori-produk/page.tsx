@@ -6,6 +6,7 @@ import {
   updateKategori,
   deleteKategori,
 } from "@/app/api/kategori/actions";
+import SearchBar from "@/components/search";
 
 interface Kategori {
   id: number;
@@ -72,31 +73,23 @@ export default function KategoriPage() {
     setEditKategori(null);
   };
 
+  const handleAddNew = () => {
+    setIsEditing(false);
+    setEditKategori(null);
+    setIsModalOpen(true);
+  };
+
   return (
     <div className="">
       <h1 className="text-2xl font-bold mb-4">Kategori</h1>
 
       {error && <div className="text-red-500 mb-4">{error}</div>}
 
-      <div className="mb-4 flex gap-2">
-        <input
-          type="text"
-          placeholder="Search kategori"
-          className="border p-2 rounded w-full"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <button
-          onClick={() => {
-            setIsEditing(false);
-            setEditKategori(null);
-            setIsModalOpen(true); // Open the modal for adding a new category
-          }}
-          className="bg-green-500 text-white px-4 py-2 rounded"
-        >
-          Add New
-        </button>
-      </div>
+      <SearchBar
+        search={search}
+        setSearch={setSearch}
+        onAddNew={handleAddNew}
+      />
 
       <table className=" w-full border-collapse border border-gray-200 mt-6">
         <thead>

@@ -63,7 +63,7 @@ export default function RootLayout({
             onMouseEnter={() => setHovering(true)}
             onMouseLeave={() => setHovering(false)}
           >
-            <ul className="flex flex-col gap-6">
+            <ul className="flex flex-col gap-3">
               <li className="px-3">
                 <div
                   className={`text-white font-bold text-center uppercase ${
@@ -85,6 +85,13 @@ export default function RootLayout({
                 href="/kategori-produk"
                 icon={<BarChart size={20} />}
                 label="Kategori Produk"
+                isExpanded={isSidebarExpanded || isHovering}
+              />
+
+              <SidebarLink
+                href="/users"
+                icon={<BarChart size={20} />}
+                label="Users"
                 isExpanded={isSidebarExpanded || isHovering}
               />
             </ul>
