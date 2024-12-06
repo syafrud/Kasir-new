@@ -23,7 +23,6 @@ export default function UserPage() {
   const [editUser, setEditUser] = useState<User | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // State baru untuk password
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
@@ -76,21 +75,25 @@ export default function UserPage() {
     }
 
     const formData = new FormData(e.target as HTMLFormElement);
-    formData.set("password", password); // Tambahkan password ke FormData
+    formData.set("password", password);
 
-    if (isEditing && editUser) {
-      await updateUser(formData, editUser.id);
-    } else {
-      await createUser(formData);
+    try {
+      if (isEditing && editUser) {
+        await updateUser(formData, editUser.id);
+      } else {
+        await createUser(formData);
+      }
+
+      fetchUsers();
+      setIsModalOpen(false);
+      setIsEditing(false);
+      setEditUser(null);
+      setPassword("");
+      setConfirmPassword("");
+      setPasswordError("");
+    } catch (err: any) {
+      setError(err.message || "An unexpected error occurred.");
     }
-
-    fetchUsers();
-    setIsModalOpen(false);
-    setIsEditing(false);
-    setEditUser(null);
-    setPassword(""); // Reset password state
-    setConfirmPassword("");
-    setPasswordError("");
   };
 
   const handleAddNew = () => {
@@ -176,7 +179,7 @@ export default function UserPage() {
                   defaultValue={isEditing ? editUser?.nama_user : ""}
                 />
               </div>
-              <div className="grid col-span-2 w-full min-w-sm items-center">
+              <div className="grid col-span-2 w-full min-w-sm items-center gap-2">
                 <label className="block text-base font-medium text-gray-700">
                   Username
                 </label>
@@ -184,9 +187,10 @@ export default function UserPage() {
                   type="text"
                   name="username"
                   placeholder="Username"
-                  className="border p-2 rounded w-full mt-2"
+                  className="border p-2 rounded w-full "
                   defaultValue={isEditing ? editUser?.username : ""}
                 />
+                {error && <div className=" text-red-500 ">{error}</div>}
               </div>
               <div className="grid col-span-2 w-full min-w-sm items-center">
                 <label className="block text-base font-medium text-gray-700">
@@ -265,6 +269,7 @@ export default function UserPage() {
                   defaultValue={isEditing ? editUser?.alamat : ""}
                 />
               </div>
+
               <button
                 type="submit"
                 className="bg-green-500 text-white px-4 py-2 rounded mt-3"

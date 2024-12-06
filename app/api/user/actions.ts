@@ -2,11 +2,9 @@
 
 import prisma from "@/lib/db";
 
-// Enum UserRole
 const UserRoles = ["ADMIN", "PETUGAS"] as const;
 type UserRole = (typeof UserRoles)[number];
 
-// Fungsi untuk membuat user baru
 export async function createUser(formdata: FormData) {
   const userPriv = formdata.get("user_priv") as string;
 
@@ -14,10 +12,20 @@ export async function createUser(formdata: FormData) {
     throw new Error("Invalid user_priv value");
   }
 
+  const username = formdata.get("username") as string;
+
+  const existingUser = await prisma.users.findUnique({
+    where: { username },
+  });
+
+  if (existingUser) {
+    throw new Error("Username already taken");
+  }
+
   await prisma.users.create({
     data: {
       nama_user: formdata.get("nama_user") as string,
-      username: formdata.get("username") as string,
+      username,
       password: formdata.get("password") as string,
       user_priv: userPriv as UserRole,
       alamat: formdata.get("alamat") as string,
@@ -27,7 +35,6 @@ export async function createUser(formdata: FormData) {
   });
 }
 
-// Fungsi untuk memperbarui data user
 export async function updateUser(formdata: FormData, id: number) {
   const userPriv = formdata.get("user_priv") as string;
 
@@ -49,7 +56,6 @@ export async function updateUser(formdata: FormData, id: number) {
   });
 }
 
-// Fungsi untuk menghapus user berdasarkan ID
 export async function deleteUser(id: number) {
   await prisma.users.delete({
     where: { id },
