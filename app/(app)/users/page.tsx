@@ -27,6 +27,9 @@ export default function UserPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
 
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<number | null>(null);
+
   const fetchUsers = async () => {
     try {
       const res = await fetch(`/api/user?search=${encodeURIComponent(search)}`);
@@ -51,17 +54,27 @@ export default function UserPage() {
     setIsEditing(true);
     setEditUser(user);
     setIsModalOpen(true);
-    setPassword(""); // Reset password state saat edit
+    setPassword("");
     setConfirmPassword("");
     setPasswordError("");
   };
 
-  const handleDelete = async (id: number) => {
+  const openConfirmModal = (id: number) => {
+    setUserToDelete(id);
+    setIsConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (userToDelete === null) return;
+
     try {
-      await deleteUser(id);
+      await deleteUser(userToDelete);
       fetchUsers();
     } catch (error) {
       setError(error?.message || "An error occurred while deleting.");
+    } finally {
+      setIsConfirmOpen(false);
+      setUserToDelete(null);
     }
   };
 
@@ -148,7 +161,7 @@ export default function UserPage() {
                   Edit
                 </button>
                 <button
-                  onClick={() => handleDelete(user.id)}
+                  onClick={() => openConfirmModal(user.id)}
                   className="w-full bg-red-500 text-white px-4 py-2 rounded"
                 >
                   Delete
@@ -159,7 +172,7 @@ export default function UserPage() {
         </tbody>
       </table>
 
-      {/* Modal */}
+      {/* Modal Create/Update*/}
       {isModalOpen && (
         <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg ">
@@ -303,6 +316,31 @@ export default function UserPage() {
                 Cancel
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Delete*/}
+      {isConfirmOpen && (
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg text-center">
+            <p className="text-lg font-medium mb-4">
+              Apakah Anda yakin ingin menghapus data ini?
+            </p>
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={confirmDelete}
+                className="bg-red-500 text-white px-4 py-2 rounded"
+              >
+                Hapus
+              </button>
+              <button
+                onClick={() => setIsConfirmOpen(false)}
+                className="bg-gray-300 text-black px-4 py-2 rounded"
+              >
+                Batal
+              </button>
+            </div>
           </div>
         </div>
       )}

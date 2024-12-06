@@ -21,7 +21,6 @@ export async function GET(request: NextRequest) {
 
     console.log("Kategori results:", kategori);
 
-    // Ensure a successful response even if no results
     return NextResponse.json(kategori, { status: 200 });
   } catch (error) {
     console.error("Prisma error:", error);

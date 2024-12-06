@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import {
   createKategori,
-  updateKategori,
   deleteKategori,
+  updateKategori,
 } from "@/app/api/kategori/actions";
 import SearchBar from "@/components/search";
 
@@ -20,6 +20,9 @@ export default function KategoriPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editKategori, setEditKategori] = useState<Kategori | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [kategoriToDelete, setKategoriToDelete] = useState<number | null>(null);
 
   const fetchKategori = async () => {
     try {
@@ -47,15 +50,24 @@ export default function KategoriPage() {
   const handleEdit = (kategori: Kategori) => {
     setIsEditing(true);
     setEditKategori(kategori);
-    setIsModalOpen(true); // Open the modal when editing
+    setIsModalOpen(true);
+  };
+  const openConfirmModal = (id: number) => {
+    setKategoriToDelete(id);
+    setIsConfirmOpen(true);
   };
 
-  const handleDelete = async (id: number) => {
+  const confirmDelete = async () => {
+    if (kategoriToDelete === null) return;
+
     try {
-      await deleteKategori(new FormData(), id); // Assuming the ID is enough for deletion
+      await deleteKategori(kategoriToDelete);
       fetchKategori();
     } catch (error) {
       setError(error?.message || "An error occurred while deleting.");
+    } finally {
+      setIsConfirmOpen(false);
+      setKategoriToDelete(null);
     }
   };
 
@@ -68,7 +80,7 @@ export default function KategoriPage() {
       await createKategori(formData);
     }
     fetchKategori();
-    setIsModalOpen(false); // Close the modal after submission
+    setIsModalOpen(false);
     setIsEditing(false);
     setEditKategori(null);
   };
@@ -94,15 +106,15 @@ export default function KategoriPage() {
       <table className=" w-full border-collapse border border-gray-200 mt-6">
         <thead>
           <tr>
-            <th className="border p-2 w-min">ID</th>
+            <th className="border p-2 w-min">NO</th>
             <th className="border p-2 w-full">Nama Kategori</th>
             <th className="border p-2 w-min">Actions</th>
           </tr>
         </thead>
         <tbody>
-          {kategori.map((item) => (
+          {kategori.map((item, index) => (
             <tr key={item.id}>
-              <td className="border p-2">{item.id}</td>
+              <td className="border p-2">{index + 1}</td>
               <td className="border p-2">{item.nama_kategori}</td>
               <td className="flex flex-row border gap-2 p-2">
                 <button
@@ -112,7 +124,7 @@ export default function KategoriPage() {
                   Edit
                 </button>
                 <button
-                  onClick={() => handleDelete(item.id)}
+                  onClick={() => openConfirmModal(item.id)}
                   className="w-full bg-red-500 text-white px-4 py-2 rounded"
                 >
                   Delete
@@ -152,6 +164,31 @@ export default function KategoriPage() {
                 Cancel
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Delete*/}
+      {isConfirmOpen && (
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg text-center">
+            <p className="text-lg font-medium mb-4">
+              Apakah Anda yakin ingin menghapus data ini?
+            </p>
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={confirmDelete}
+                className="bg-red-500 text-white px-4 py-2 rounded"
+              >
+                Hapus
+              </button>
+              <button
+                onClick={() => setIsConfirmOpen(false)}
+                className="bg-gray-300 text-black px-4 py-2 rounded"
+              >
+                Batal
+              </button>
+            </div>
           </div>
         </div>
       )}

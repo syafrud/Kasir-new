@@ -19,6 +19,6 @@ export async function updateKategori(formdata: FormData, id: number) {
   });
 }
 
-export async function deleteKategori(formdata: FormData, id: number) {
+export async function deleteKategori(id: number) {
   await prisma.kategori.delete({ where: { id } });
 }
