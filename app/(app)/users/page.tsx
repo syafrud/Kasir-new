@@ -72,6 +72,8 @@ export default function UserPage() {
     if (password !== confirmPassword) {
       setPasswordError("Password dan Confirmation Password tidak cocok.");
       return;
+    } else {
+      setPasswordError("");
     }
 
     const formData = new FormData(e.target as HTMLFormElement);
@@ -91,6 +93,7 @@ export default function UserPage() {
       setPassword("");
       setConfirmPassword("");
       setPasswordError("");
+      setError("");
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred.");
     }
@@ -167,84 +170,100 @@ export default function UserPage() {
               onSubmit={handleFormSubmit}
               className="w-full sm:min-w-[400px] grid grid-cols-2 gap-3"
             >
-              <div className="grid col-span-2 w-full min-w-sm items-center">
-                <label className="block text-base font-medium text-gray-700">
-                  Nama User
-                </label>
-                <input
-                  type="text"
-                  name="nama_user"
-                  placeholder="Nama User"
-                  className="border p-2 rounded w-full mt-2"
-                  defaultValue={isEditing ? editUser?.nama_user : ""}
-                />
-              </div>
-              <div className="grid col-span-2 w-full min-w-sm items-center gap-2">
-                <label className="block text-base font-medium text-gray-700">
-                  Username
-                </label>
-                <input
-                  type="text"
-                  name="username"
-                  placeholder="Username"
-                  className="border p-2 rounded w-full "
-                  defaultValue={isEditing ? editUser?.username : ""}
-                />
-                {error && <div className=" text-red-500 ">{error}</div>}
-              </div>
-              <div className="grid col-span-2 w-full min-w-sm items-center">
-                <label className="block text-base font-medium text-gray-700">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  placeholder="Password"
-                  className="border p-2 rounded w-full mt-2"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-              <div className="grid col-span-2 w-full min-w-sm items-center">
-                <label className="block text-base font-medium text-gray-700">
-                  Confirmation Password
-                </label>
-                <input
-                  type="password"
-                  placeholder="Confirmation Password"
-                  className="border p-2 rounded w-full mt-2"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                />
-              </div>
-              {passwordError && (
-                <div className="col-span-2 text-red-500 text-sm mt-1">
-                  {passwordError}
+              <div className="grid col-span-1 w-full min-w-sm ">
+                <div className=" w-full min-w-sm items-center">
+                  <label className="block text-base font-medium text-gray-700">
+                    Nama User
+                  </label>
+                  <input
+                    type="text"
+                    name="nama_user"
+                    placeholder="Nama User"
+                    className="border p-2 rounded w-full mt-2"
+                    defaultValue={isEditing ? editUser?.nama_user : ""}
+                  />
                 </div>
-              )}
-              <div className="grid col-span-1 w-full min-w-sm items-center">
-                <label className="block text-base font-medium text-gray-700">
-                  No. HP
-                </label>
-                <input
-                  type="text"
-                  name="hp"
-                  placeholder="No. HP"
-                  className="border p-2 rounded w-full mt-2"
-                  defaultValue={isEditing ? editUser?.hp : ""}
-                />
+                <div className=" w-full min-w-sm items-center gap-2">
+                  <label className="block text-base font-medium text-gray-700">
+                    Username
+                  </label>
+                  <input
+                    type="text"
+                    name="username"
+                    placeholder="Username"
+                    className="border p-2 rounded w-full mt-2"
+                    defaultValue={isEditing ? editUser?.username : ""}
+                  />
+                </div>
+                {error && (
+                  <div className=" grid-cols-2">
+                    <div className=" "> </div>
+                    <div className=" text-red-500 grid col-span-1 ">
+                      {error}
+                    </div>
+                  </div>
+                )}
+                <div className=" w-full min-w-sm items-center">
+                  <label className="block text-base font-medium text-gray-700">
+                    No. HP
+                  </label>
+                  <input
+                    type="text"
+                    name="hp"
+                    placeholder="No. HP"
+                    className="border p-2 rounded w-full mt-2"
+                    defaultValue={isEditing ? editUser?.hp : ""}
+                  />
+                </div>
               </div>
-              <div className="grid col-span-1 w-full min-w-sm items-center">
-                <label className="block text-base font-medium text-gray-700">
-                  Status
-                </label>
-                <input
-                  type="text"
-                  name="status"
-                  placeholder="Status"
-                  className="border p-2 rounded w-full mt-2"
-                  defaultValue={isEditing ? editUser?.status : ""}
-                />
+
+              <div className="grid col-span-1 grid-cols-1 w-full min-w-sm">
+                <div className=" grid col-span-1 w-full min-w-sm items-center">
+                  <label className="block text-base font-medium text-gray-700">
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    placeholder="Password"
+                    className="border p-2 rounded w-full mt-2"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </div>
+                <div className="grid col-span-1 w-full min-w-sm items-center">
+                  <label className="block text-base font-medium text-gray-700">
+                    Confirmation Password
+                  </label>
+                  <input
+                    type="password"
+                    placeholder="Confirmation Password"
+                    className="border p-2 rounded w-full mt-2"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
+                </div>
+                {passwordError && (
+                  <div className="grid col-span-1 grid-cols-2">
+                    <div className=" "> </div>
+                    <div className="col-span-2 text-red-500">
+                      {passwordError}
+                    </div>
+                  </div>
+                )}
+                <div className="grid col-span-1 w-full min-w-sm items-center">
+                  <label className="block text-base font-medium text-gray-700">
+                    Status
+                  </label>
+                  <input
+                    type="text"
+                    name="status"
+                    placeholder="Status"
+                    className="border p-2 rounded w-full mt-2"
+                    defaultValue={isEditing ? editUser?.status : ""}
+                  />
+                </div>
               </div>
+
               <div className="grid col-span-2 w-full min-w-sm items-center">
                 <label className="block text-base font-medium text-gray-700">
                   User Privilage
