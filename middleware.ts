@@ -37,7 +37,7 @@ export async function middleware(req: NextRequest) {
     const allowedRoles = roleBasedPaths[path];
     if (!allowedRoles.includes(token.role)) {
       // Jika role tidak diizinkan, redirect ke halaman error atau home
-      return NextResponse.redirect(new URL("/unauthorized", req.url));
+      return NextResponse.redirect(new URL("/", req.url));
     }
   }
 
