@@ -6,23 +6,39 @@ export async function middleware(req: NextRequest) {
   const token = await getToken({ req });
   const path = req.nextUrl.pathname;
 
+  // Daftar route publik (tidak membutuhkan autentikasi)
   const publicPaths = ["/login", "/api"];
 
-  // Check if the path is inside the app directory but not in public paths
+  // Daftar route dengan pembatasan role
+  const roleBasedPaths: Record<string, string[]> = {
+    "/admin": ["ADMIN"], // Hanya bisa diakses oleh role ADMIN
+    "/dashboard": ["ADMIN", "PETUGAS"], // Bisa diakses oleh ADMIN dan PETUGAS
+  };
+
+  // Apakah path saat ini adalah bagian dari app tetapi bukan publik
   const isAppRoute =
     path.split("/").length > 1 &&
     !publicPaths.some((publicPath) => path.startsWith(publicPath));
 
-  // If it's an app route and no token exists, redirect to login
+  // Jika route membutuhkan autentikasi dan token tidak ada, redirect ke login
   if (isAppRoute && !token) {
     return NextResponse.redirect(
       new URL(`/login?callbackUrl=${encodeURIComponent(path)}`, req.url)
     );
   }
 
-  // If user is on login and already authenticated, redirect to home
+  // Jika user sudah login dan berada di halaman login, redirect ke home
   if (token && path === "/login") {
     return NextResponse.redirect(new URL("/", req.url));
+  }
+
+  // Cek pembatasan role untuk path tertentu
+  if (token && roleBasedPaths[path]) {
+    const allowedRoles = roleBasedPaths[path];
+    if (!allowedRoles.includes(token.role)) {
+      // Jika role tidak diizinkan, redirect ke halaman error atau home
+      return NextResponse.redirect(new URL("/unauthorized", req.url));
+    }
   }
 
   return NextResponse.next();
