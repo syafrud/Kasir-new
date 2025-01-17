@@ -80,14 +80,18 @@ export default function RootLayout({
                   Dashboard
                 </div>
               </li>
-
               <SidebarLink
                 href="/kategori-produk"
                 icon={<BarChart size={20} />}
                 label="Kategori Produk"
                 isExpanded={isSidebarExpanded || isHovering}
               />
-
+              <SidebarLink
+                href="/pelanggan"
+                icon={<BarChart size={20} />}
+                label="Pelanggan"
+                isExpanded={isSidebarExpanded || isHovering}
+              />
               <SidebarLink
                 href="/users"
                 icon={<BarChart size={20} />}

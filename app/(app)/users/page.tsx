@@ -151,7 +151,7 @@ export default function UserPage() {
               <td className="border p-2 w-1/6">{user.username}</td>
               <td className="border p-2 w-1/6 text-center">{user.user_priv}</td>
               <td className="border p-2 w-1/6">{user.alamat}</td>
-              <td className="border p-2 w-1/12 text-right">{user.hp}</td>
+              <td className="border p-2 w-1/6 text-right">{user.hp}</td>
               <td className="border p-2 w-1/6 text-center">{user.status}</td>
               <td className="flex flex-row border gap-3 p-3">
                 <button
