@@ -130,39 +130,39 @@ export default function UserPage() {
         onAddNew={handleAddNew}
       />
 
-      <table className="w-full border-collapse border border-gray-200 mt-6">
+      <table className=" border-collapse border border-gray-200 mt-6">
         <thead>
           <tr>
             <th className="border p-2">NO</th>
-            <th className="border p-2">Nama User</th>
-            <th className="border p-2">Username</th>
-            <th className="border p-2">Privilege</th>
-            <th className="border p-2">Alamat</th>
-            <th className="border p-2">HP</th>
-            <th className="border p-2">Status</th>
-            <th className="border p-2">Actions</th>
+            <th className="border p-2 w-1/6">Nama User</th>
+            <th className="border p-2 w-1/6">Username</th>
+            <th className="border p-2 w-1/6">Privilege</th>
+            <th className="border p-2 w-1/6">Alamat</th>
+            <th className="border p-2 w-1/6">HP</th>
+            <th className="border p-2 w-1/6">Status</th>
+            <th className="border py-2 px-16 w-52">Actions</th>
           </tr>
         </thead>
         <tbody>
           {users.map((user, index) => (
             <tr key={user.id}>
               <td className="border p-2 text-center">{index + 1}</td>
-              <td className="border p-2 w-1/6">{user.nama_user}</td>
-              <td className="border p-2 w-1/6">{user.username}</td>
-              <td className="border p-2 w-1/6 text-center">{user.user_priv}</td>
-              <td className="border p-2 w-1/6">{user.alamat}</td>
-              <td className="border p-2 w-1/6 text-right">{user.hp}</td>
-              <td className="border p-2 w-1/6 text-center">{user.status}</td>
+              <td className="border p-2 ">{user.nama_user}</td>
+              <td className="border p-2 ">{user.username}</td>
+              <td className="border p-2  text-center">{user.user_priv}</td>
+              <td className="border p-2 ">{user.alamat}</td>
+              <td className="border p-2  text-right">{user.hp}</td>
+              <td className="border p-2  text-center">{user.status}</td>
               <td className="flex flex-row border gap-3 p-3">
                 <button
                   onClick={() => handleEdit(user)}
-                  className="w-full bg-blue-500 text-white px-4 py-2 rounded"
+                  className="w-1/2 bg-blue-500 text-white px-4 py-2 rounded"
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => openConfirmModal(user.id)}
-                  className="w-full bg-red-500 text-white px-4 py-2 rounded"
+                  className="w-1/2 bg-red-500 text-white px-4 py-2 rounded"
                 >
                   Delete
                 </button>

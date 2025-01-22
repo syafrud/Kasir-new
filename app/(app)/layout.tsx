@@ -104,8 +104,10 @@ export default function RootLayout({
           {/* Content */}
           <div
             className={`${
-              isSidebarExpanded ? "pl-[225px]" : "pl-[70px]"
-            } pt-[70px] transition-all duration-300 max-w-max w-screen`}
+              isSidebarExpanded ? "ml-[225px]" : "ml-[70px]"
+            } mt-[70px] transition-all duration-300 w-[calc(100vw-${
+              isSidebarExpanded ? "225px" : "70px"
+            })]`}
           >
             <div className="p-10">
               <Providers>{children}</Providers>

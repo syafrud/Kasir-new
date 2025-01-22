@@ -103,12 +103,12 @@ export default function KategoriPage() {
         onAddNew={handleAddNew}
       />
 
-      <table className=" w-full border-collapse border border-gray-200 mt-6">
+      <table className=" border-collapse border border-gray-200 mt-6 ">
         <thead>
           <tr>
             <th className="border p-2 w-min">NO</th>
             <th className="border p-2 w-full">Nama Kategori</th>
-            <th className="border p-2 w-min">Actions</th>
+            <th className="border py-2 px-16 w-52">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -119,13 +119,13 @@ export default function KategoriPage() {
               <td className="flex flex-row border gap-2 p-2">
                 <button
                   onClick={() => handleEdit(item)}
-                  className="w-full bg-blue-500 text-white px-4 py-2 rounded mr-2"
+                  className="w-1/2 bg-blue-500 text-white px-4 py-2 rounded mr-2"
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => openConfirmModal(item.id)}
-                  className="w-full bg-red-500 text-white px-4 py-2 rounded"
+                  className="w-1/2 bg-red-500 text-white px-4 py-2 rounded"
                 >
                   Delete
                 </button>

@@ -109,35 +109,35 @@ export default function PelangganPage() {
         onAddNew={handleAddNew}
       />
 
-      <table className=" w-full border-collapse border border-gray-200 mt-6">
+      <table className="w-full border-collapse border border-gray-200 mt-6">
         <thead>
-          <tr>
-            <th className="border p-2 ">NO</th>
-            <th className="border p-2 ">Nama Pelanggan</th>
-            <th className="border p-2 ">Alamat</th>
-            <th className="border p-2 ">NO HP</th>
-            <th className="border p-2 ">Status</th>
-            <th className="border p-2 ">Actions</th>
+          <tr className=" text-center">
+            <th className="border p-2 max-w-min">NO</th>
+            <th className="border p-2 w-1/6">Nama Pelanggan</th>
+            <th className="border p-2 w-3/6">Alamat</th>
+            <th className="border p-2 w-1/6">NO HP</th>
+            <th className="border p-2 w-1/6">Status</th>
+            <th className="border py-2 px-16 w-52">Actions</th>
           </tr>
         </thead>
         <tbody>
           {pelanggan.map((item, index) => (
             <tr key={item.id}>
               <td className="border p-2">{index + 1}</td>
-              <td className="border p-2 w-1/4">{item.nama}</td>
-              <td className="border p-2 w-1/4">{item.alamat}</td>
-              <td className="border p-2 w-1/4 text-right">{item.hp}</td>
-              <td className="border p-2 w-1/4 text-right">{item.status}</td>
+              <td className="border p-2">{item.nama}</td>
+              <td className="border p-2">{item.alamat}</td>
+              <td className="border p-2 text-right">{item.hp}</td>
+              <td className="border p-2 text-right">{item.status}</td>
               <td className="flex flex-row border gap-2 p-2">
                 <button
                   onClick={() => handleEdit(item)}
-                  className="w-full bg-blue-500 text-white px-4 py-2 rounded mr-2"
+                  className="w-1/2 bg-blue-500 text-white px-4 py-2 rounded mr-2"
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => openConfirmModal(item.id)}
-                  className="w-full bg-red-500 text-white px-4 py-2 rounded"
+                  className="w-1/2 bg-red-500 text-white px-4 py-2 rounded"
                 >
                   Delete
                 </button>
