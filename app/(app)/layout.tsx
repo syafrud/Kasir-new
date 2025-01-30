@@ -94,6 +94,12 @@ export default function RootLayout({
                 isExpanded={isSidebarExpanded || isHovering}
               />
               <SidebarLink
+                href="/produk"
+                icon={<BarChart size={20} />}
+                label="Produk"
+                isExpanded={isSidebarExpanded || isHovering}
+              />
+              <SidebarLink
                 href="/users"
                 icon={<BarChart size={20} />}
                 label="Users"
