@@ -5,6 +5,7 @@ import { BarChart, LogOut, User, Menu } from "lucide-react";
 import { useState } from "react";
 import { LogoutButton } from "../auth";
 import { Providers } from "../providers";
+import { Toaster } from "react-hot-toast";
 
 export default function RootLayout({
   children,
@@ -109,6 +110,18 @@ export default function RootLayout({
               isSidebarExpanded ? "225px" : "70px"
             })]`}
           >
+            <Toaster
+              position="bottom-right"
+              toastOptions={{
+                className: "",
+                duration: 5000,
+                removeDelay: 1000,
+                style: {
+                  background: "#363636",
+                  color: "#fff",
+                },
+              }}
+            />
             <div className="p-10">
               <Providers>{children}</Providers>
             </div>

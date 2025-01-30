@@ -7,6 +7,7 @@ import {
   updateKategori,
 } from "@/app/api/kategori/actions";
 import SearchBar from "@/components/search";
+import toast from "react-hot-toast";
 
 interface Kategori {
   id: number;
@@ -68,6 +69,7 @@ export default function KategoriPage() {
     } finally {
       setIsConfirmOpen(false);
       setKategoriToDelete(null);
+      toast.success("Data berhasil dihapus");
     }
   };
 
@@ -76,8 +78,10 @@ export default function KategoriPage() {
     const formData = new FormData(e.target as HTMLFormElement);
     if (isEditing && editKategori) {
       await updateKategori(formData, editKategori.id);
+      toast.success("Data berhasil diperbarui");
     } else {
       await createKategori(formData);
+      toast.success("Data berhasil ditambahkan");
     }
     fetchKategori();
     setIsModalOpen(false);

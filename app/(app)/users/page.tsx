@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { createUser, updateUser, deleteUser } from "@/app/api/user/actions";
 import SearchBar from "@/components/search";
+import toast from "react-hot-toast";
 
 interface User {
   id: number;
@@ -71,17 +72,17 @@ export default function UserPage() {
       await deleteUser(userToDelete);
       fetchUsers();
     } catch (error) {
-      setError(error?.message || "An error occurred while deleting.");
+      toast.error(error?.message || "Terjadi kesalahan saat menghapus data");
     } finally {
       setIsConfirmOpen(false);
       setUserToDelete(null);
+      toast.success("Data berhasil dihapus");
     }
   };
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validasi password
     if (password !== confirmPassword) {
       setPasswordError("Password dan Confirmation Password tidak cocok.");
       return;
@@ -95,8 +96,10 @@ export default function UserPage() {
     try {
       if (isEditing && editUser) {
         await updateUser(formData, editUser.id);
+        toast.success("Data berhasil diperbarui");
       } else {
         await createUser(formData);
+        toast.success("Data berhasil ditambahkan");
       }
 
       fetchUsers();

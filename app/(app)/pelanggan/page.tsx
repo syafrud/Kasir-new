@@ -7,6 +7,7 @@ import {
   updatePelanggan,
 } from "@/app/api/pelanggan/actions";
 import SearchBar from "@/components/search";
+import toast from "react-hot-toast";
 
 interface Pelanggan {
   id: number;
@@ -14,7 +15,6 @@ interface Pelanggan {
   alamat: string;
   hp: string;
   status: string;
-  // : string;
 }
 
 export default function PelangganPage() {
@@ -45,7 +45,11 @@ export default function PelangganPage() {
       const data = await res.json();
       setPelanggan(data);
     } catch (error) {
-      setError(error?.message || "An unexpected error occurred");
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("An unexpected error occurred");
+      }
     }
   };
 
@@ -70,10 +74,15 @@ export default function PelangganPage() {
       await deletePelanggan(pelangganToDelete);
       fetchPelanggan();
     } catch (error) {
-      setError(error?.message || "An error occurred while deleting.");
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("An error occurred while deleting.");
+      }
     } finally {
       setIsConfirmOpen(false);
       setPelangganToDelete(null);
+      toast.success("Data berhasil dihapus");
     }
   };
 
@@ -82,8 +91,10 @@ export default function PelangganPage() {
     const formData = new FormData(e.target as HTMLFormElement);
     if (isEditing && editPelanggan) {
       await updatePelanggan(formData, editPelanggan.id);
+      toast.success("Data berhasil diperbarui");
     } else {
       await createPelanggan(formData);
+      toast.success("Data berhasil ditambahkan");
     }
     fetchPelanggan();
     setIsModalOpen(false);
