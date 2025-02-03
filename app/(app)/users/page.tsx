@@ -243,6 +243,7 @@ export default function UserPage() {
                     className="border p-2 rounded w-full mt-2"
                     value={formData.nama_user}
                     onChange={handleInputChange}
+                    required
                   />
                 </div>
                 <div className="w-full min-w-sm items-center gap-2">
@@ -256,6 +257,7 @@ export default function UserPage() {
                     className="border p-2 rounded w-full mt-2"
                     value={formData.username}
                     onChange={handleInputChange}
+                    required
                   />
                 </div>
                 <div className="w-full min-w-sm items-center">
@@ -269,6 +271,7 @@ export default function UserPage() {
                     className="border p-2 rounded w-full mt-2"
                     value={formData.hp}
                     onChange={handleInputChange}
+                    required
                   />
                 </div>
               </div>
@@ -284,6 +287,7 @@ export default function UserPage() {
                     className="border p-2 rounded w-full mt-2"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    required
                   />
                 </div>
                 <div className="grid col-span-1 w-full min-w-sm items-center">
@@ -296,6 +300,7 @@ export default function UserPage() {
                     className="border p-2 rounded w-full mt-2"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
                   />
                 </div>
                 {passwordError && (
@@ -317,6 +322,7 @@ export default function UserPage() {
                     className="border p-2 rounded w-full mt-2"
                     value={formData.status}
                     onChange={handleInputChange}
+                    required
                   />
                 </div>
               </div>
@@ -330,6 +336,7 @@ export default function UserPage() {
                   className="border p-2 rounded w-full mt-2"
                   value={formData.user_priv}
                   onChange={handleInputChange}
+                  required
                 >
                   <option value="ADMIN">ADMIN</option>
                   <option value="PETUGAS">PETUGAS</option>
@@ -345,6 +352,7 @@ export default function UserPage() {
                   className="border p-2 rounded w-full mt-2"
                   value={formData.alamat}
                   onChange={handleInputChange}
+                  required
                 />
               </div>
 

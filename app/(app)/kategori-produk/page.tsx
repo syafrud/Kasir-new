@@ -172,6 +172,7 @@ export default function KategoriPage() {
                 className="border p-2 rounded w-full mt-2"
                 value={formData.nama_kategori}
                 onChange={handleInputChange}
+                required
               />
               <button
                 type="submit"

@@ -201,6 +201,7 @@ export default function PelangganPage() {
                 className="border p-2 rounded w-full mt-2"
                 value={formData.nama}
                 onChange={handleInputChange}
+                required
               />
               <input
                 type="text"
@@ -209,6 +210,7 @@ export default function PelangganPage() {
                 className="border p-2 rounded w-full mt-2"
                 value={formData.alamat}
                 onChange={handleInputChange}
+                required
               />
               <input
                 type="number"
@@ -217,6 +219,7 @@ export default function PelangganPage() {
                 className="border p-2 rounded w-full mt-2"
                 value={formData.hp}
                 onChange={handleInputChange}
+                required
               />
               <input
                 type="text"
@@ -225,6 +228,7 @@ export default function PelangganPage() {
                 className="border p-2 rounded w-full mt-2"
                 value={formData.status}
                 onChange={handleInputChange}
+                required
               />
               <button
                 type="submit"

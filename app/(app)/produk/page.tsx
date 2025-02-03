@@ -222,6 +222,7 @@ export default function ProdukPage() {
                     className="border p-2 rounded w-full mt-2"
                     value={formData.nama_produk}
                     onChange={handleInputChange}
+                    required
                   />
                 </div>
                 <div className="w-full min-w-sm items-center gap-2">
@@ -233,6 +234,7 @@ export default function ProdukPage() {
                     className="border p-2 rounded w-full mt-2"
                     value={formData.id_kategori}
                     onChange={handleInputChange}
+                    required
                   >
                     <option value="" disabled>
                       Pilih Kategori
@@ -256,6 +258,7 @@ export default function ProdukPage() {
                     step="0.01"
                     value={formData.harga_beli}
                     onChange={handleInputChange}
+                    required
                   />
                 </div>
               </div>
@@ -273,6 +276,7 @@ export default function ProdukPage() {
                     step="0.01"
                     value={formData.harga_jual}
                     onChange={handleInputChange}
+                    required
                   />
                 </div>
                 <div className="grid col-span-1 w-full min-w-sm items-center">
@@ -286,6 +290,7 @@ export default function ProdukPage() {
                     className="border p-2 rounded w-full mt-2"
                     value={formData.stok}
                     onChange={handleInputChange}
+                    required
                   />
                 </div>
                 <div className="grid col-span-1 w-full min-w-sm items-center">
@@ -299,6 +304,7 @@ export default function ProdukPage() {
                     className="border p-2 rounded w-full mt-2"
                     value={formData.barcode}
                     onChange={handleInputChange}
+                    required
                   />
                 </div>
               </div>
