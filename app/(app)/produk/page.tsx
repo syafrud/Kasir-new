@@ -23,12 +23,19 @@ interface Produk {
 export default function ProdukPage() {
   const [produks, setProduk] = useState<Produk[]>([]);
   const [kategoriOptions, setProdukOptions] = useState<any[]>([]);
-  const [selectedProduk, setSelectedProduk] = useState<number | "">(0);
   const [search, setSearch] = useState("");
   const [error, setError] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [editProduk, setEditProduk] = useState<Produk | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    nama_produk: "",
+    id_kategori: "",
+    harga_beli: "",
+    harga_jual: "",
+    stok: "",
+    barcode: "",
+  });
 
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [produkToDelete, setProdukToDelete] = useState<number | null>(null);
@@ -56,19 +63,26 @@ export default function ProdukPage() {
   }, [search]);
 
   useEffect(() => {
-    const fetchProduk = async () => {
+    const fetchKategori = async () => {
       const response = await fetch("/api/kategori");
       const data = await response.json();
       setProdukOptions(data);
     };
 
-    fetchProduk();
+    fetchKategori();
   }, []);
 
   const handleEdit = (produk: Produk) => {
     setIsEditing(true);
     setEditProduk(produk);
-    setSelectedProduk(produk.id_kategori); // Update selectedProduk when editing
+    setFormData({
+      nama_produk: produk.nama_produk,
+      id_kategori: produk.id_kategori.toString(),
+      harga_beli: produk.harga_beli,
+      harga_jual: produk.harga_jual,
+      stok: produk.stok,
+      barcode: produk.barcode,
+    });
     setIsModalOpen(true);
   };
 
@@ -94,12 +108,16 @@ export default function ProdukPage() {
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const formData = new FormData(e.target as HTMLFormElement);
+    const submitData = new FormData();
+    Object.entries(formData).forEach(([key, value]) => {
+      submitData.append(key, value);
+    });
+
     if (isEditing && editProduk) {
-      await updateProduk(formData, editProduk.id);
+      await updateProduk(submitData, editProduk.id);
       toast.success("Data berhasil diperbarui");
     } else {
-      await createProduk(formData);
+      await createProduk(submitData);
       toast.success("Data berhasil ditambahkan");
     }
     fetchProduk();
@@ -111,8 +129,20 @@ export default function ProdukPage() {
   const handleAddNew = () => {
     setIsEditing(false);
     setEditProduk(null);
-    setSelectedProduk("");
     setIsModalOpen(true);
+  };
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
   };
 
   return (
@@ -127,7 +157,7 @@ export default function ProdukPage() {
         onAddNew={handleAddNew}
       />
 
-      <table className=" border-collapse border border-gray-200 mt-6">
+      <table className="border-collapse border border-gray-200 mt-6">
         <thead>
           <tr>
             <th className="border p-2">NO</th>
@@ -144,12 +174,12 @@ export default function ProdukPage() {
           {produks.map((produk, index) => (
             <tr key={produk.id}>
               <td className="border p-2 text-center">{index + 1}</td>
-              <td className="border p-2 ">{produk.nama_produk}</td>
-              <td className="border p-2 ">{produk.kategori?.nama_kategori}</td>
-              <td className="border p-2  text-center">{produk.harga_beli}</td>
-              <td className="border p-2 ">{produk.harga_jual}</td>
-              <td className="border p-2  text-right">{produk.stok}</td>
-              <td className="border p-2  text-center">{produk.barcode}</td>
+              <td className="border p-2">{produk.nama_produk}</td>
+              <td className="border p-2">{produk.kategori?.nama_kategori}</td>
+              <td className="border p-2 text-center">{produk.harga_beli}</td>
+              <td className="border p-2">{produk.harga_jual}</td>
+              <td className="border p-2 text-right">{produk.stok}</td>
+              <td className="border p-2 text-center">{produk.barcode}</td>
               <td className="flex flex-row border gap-3 p-3">
                 <button
                   onClick={() => handleEdit(produk)}
@@ -172,7 +202,7 @@ export default function ProdukPage() {
       {/* Modal Create/Update*/}
       {isModalOpen && (
         <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg ">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
             <h2 className="text-xl font-bold mb-4">
               {isEditing ? "Edit Produk" : "Add New Produk"}
             </h2>
@@ -190,7 +220,8 @@ export default function ProdukPage() {
                     name="nama_produk"
                     placeholder="Nama Produk"
                     className="border p-2 rounded w-full mt-2"
-                    defaultValue={isEditing ? editProduk?.nama_produk : ""}
+                    value={formData.nama_produk}
+                    onChange={handleInputChange}
                   />
                 </div>
                 <div className="w-full min-w-sm items-center gap-2">
@@ -200,21 +231,8 @@ export default function ProdukPage() {
                   <select
                     name="id_kategori"
                     className="border p-2 rounded w-full mt-2"
-                    value={
-                      isEditing ? editProduk?.id_kategori : selectedProduk || ""
-                    }
-                    onChange={(e) => {
-                      const value = e.target.value
-                        ? Number(e.target.value)
-                        : "";
-                      setSelectedProduk(value);
-                      if (isEditing && editProduk) {
-                        setEditProduk({
-                          ...editProduk,
-                          id_kategori: value,
-                        });
-                      }
-                    }}
+                    value={formData.id_kategori}
+                    onChange={handleInputChange}
                   >
                     <option value="" disabled>
                       Pilih Kategori
@@ -226,12 +244,6 @@ export default function ProdukPage() {
                     ))}
                   </select>
                 </div>
-                {error && (
-                  <div className="grid-cols-2">
-                    <div className=" "> </div>
-                    <div className="text-red-500 grid col-span-1">{error}</div>
-                  </div>
-                )}
                 <div className="w-full min-w-sm items-center">
                   <label className="block text-base font-medium text-gray-700">
                     Harga Beli
@@ -242,7 +254,8 @@ export default function ProdukPage() {
                     placeholder="Harga Beli"
                     className="border p-2 rounded w-full mt-2"
                     step="0.01"
-                    defaultValue={isEditing ? editProduk?.harga_beli : ""}
+                    value={formData.harga_beli}
+                    onChange={handleInputChange}
                   />
                 </div>
               </div>
@@ -258,7 +271,8 @@ export default function ProdukPage() {
                     placeholder="Harga Jual"
                     className="border p-2 rounded w-full mt-2"
                     step="0.01"
-                    defaultValue={isEditing ? editProduk?.harga_jual : ""}
+                    value={formData.harga_jual}
+                    onChange={handleInputChange}
                   />
                 </div>
                 <div className="grid col-span-1 w-full min-w-sm items-center">
@@ -270,7 +284,8 @@ export default function ProdukPage() {
                     name="stok"
                     placeholder="Stok Barang"
                     className="border p-2 rounded w-full mt-2"
-                    defaultValue={isEditing ? editProduk?.stok : ""}
+                    value={formData.stok}
+                    onChange={handleInputChange}
                   />
                 </div>
                 <div className="grid col-span-1 w-full min-w-sm items-center">
@@ -282,7 +297,8 @@ export default function ProdukPage() {
                     name="barcode"
                     placeholder="Barcode"
                     className="border p-2 rounded w-full mt-2"
-                    defaultValue={isEditing ? editProduk?.barcode : ""}
+                    value={formData.barcode}
+                    onChange={handleInputChange}
                   />
                 </div>
               </div>
@@ -295,7 +311,7 @@ export default function ProdukPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setIsModalOpen(false)}
+                onClick={handleModalClose}
                 className="bg-gray-300 text-black px-4 py-2 rounded mt-3 ml-2"
               >
                 Cancel

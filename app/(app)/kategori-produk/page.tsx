@@ -21,6 +21,9 @@ export default function KategoriPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editKategori, setEditKategori] = useState<Kategori | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    nama_kategori: "",
+  });
 
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [kategoriToDelete, setKategoriToDelete] = useState<number | null>(null);
@@ -51,8 +54,10 @@ export default function KategoriPage() {
   const handleEdit = (kategori: Kategori) => {
     setIsEditing(true);
     setEditKategori(kategori);
+    setFormData({ nama_kategori: kategori.nama_kategori });
     setIsModalOpen(true);
   };
+
   const openConfirmModal = (id: number) => {
     setKategoriToDelete(id);
     setIsConfirmOpen(true);
@@ -75,12 +80,14 @@ export default function KategoriPage() {
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const formData = new FormData(e.target as HTMLFormElement);
+    const submitData = new FormData();
+    submitData.append("nama_kategori", formData.nama_kategori);
+
     if (isEditing && editKategori) {
-      await updateKategori(formData, editKategori.id);
+      await updateKategori(submitData, editKategori.id);
       toast.success("Data berhasil diperbarui");
     } else {
-      await createKategori(formData);
+      await createKategori(submitData);
       toast.success("Data berhasil ditambahkan");
     }
     fetchKategori();
@@ -95,9 +102,20 @@ export default function KategoriPage() {
     setIsModalOpen(true);
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+  };
+
   return (
     <div className="">
-      <h1 className="text-2xl font-bold mb-4">Kategori</h1>
+      <h1 className="text-2xl font-bold mb-4">Kategori Produk</h1>
 
       {error && <div className="text-red-500 mb-4">{error}</div>}
 
@@ -107,7 +125,7 @@ export default function KategoriPage() {
         onAddNew={handleAddNew}
       />
 
-      <table className=" border-collapse border border-gray-200 mt-6 ">
+      <table className="border-collapse border border-gray-200 mt-6">
         <thead>
           <tr>
             <th className="border p-2 w-min">NO</th>
@@ -152,7 +170,8 @@ export default function KategoriPage() {
                 name="nama_kategori"
                 placeholder="Nama Kategori"
                 className="border p-2 rounded w-full mt-2"
-                defaultValue={isEditing ? editKategori?.nama_kategori : ""}
+                value={formData.nama_kategori}
+                onChange={handleInputChange}
               />
               <button
                 type="submit"
@@ -162,7 +181,7 @@ export default function KategoriPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setIsModalOpen(false)}
+                onClick={handleModalClose}
                 className="bg-gray-300 text-black px-4 py-2 rounded mt-3 ml-2"
               >
                 Cancel

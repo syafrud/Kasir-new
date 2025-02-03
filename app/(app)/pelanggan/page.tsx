@@ -13,7 +13,7 @@ interface Pelanggan {
   id: number;
   nama: string;
   alamat: string;
-  hp: string;
+  hp: number;
   status: string;
 }
 
@@ -24,6 +24,12 @@ export default function PelangganPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editPelanggan, setEditPelanggan] = useState<Pelanggan | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    nama: "",
+    alamat: "",
+    hp: "",
+    status: "",
+  });
 
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [pelangganToDelete, setPelangganToDelete] = useState<number | null>(
@@ -60,8 +66,15 @@ export default function PelangganPage() {
   const handleEdit = (pelanggan: Pelanggan) => {
     setIsEditing(true);
     setEditPelanggan(pelanggan);
+    setFormData({
+      nama: pelanggan.nama,
+      alamat: pelanggan.alamat,
+      hp: pelanggan.hp,
+      status: pelanggan.status,
+    });
     setIsModalOpen(true);
   };
+
   const openConfirmModal = (id: number) => {
     setPelangganToDelete(id);
     setIsConfirmOpen(true);
@@ -88,12 +101,16 @@ export default function PelangganPage() {
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const formData = new FormData(e.target as HTMLFormElement);
+    const submitData = new FormData();
+    Object.entries(formData).forEach(([key, value]) => {
+      submitData.append(key, value);
+    });
+
     if (isEditing && editPelanggan) {
-      await updatePelanggan(formData, editPelanggan.id);
+      await updatePelanggan(submitData, editPelanggan.id);
       toast.success("Data berhasil diperbarui");
     } else {
-      await createPelanggan(formData);
+      await createPelanggan(submitData);
       toast.success("Data berhasil ditambahkan");
     }
     fetchPelanggan();
@@ -106,6 +123,17 @@ export default function PelangganPage() {
     setIsEditing(false);
     setEditPelanggan(null);
     setIsModalOpen(true);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
   };
 
   return (
@@ -122,7 +150,7 @@ export default function PelangganPage() {
 
       <table className="w-full border-collapse border border-gray-200 mt-6">
         <thead>
-          <tr className=" text-center">
+          <tr className="text-center">
             <th className="border p-2 max-w-min">NO</th>
             <th className="border p-2 w-1/6">Nama Pelanggan</th>
             <th className="border p-2 w-3/6">Alamat</th>
@@ -171,28 +199,32 @@ export default function PelangganPage() {
                 name="nama"
                 placeholder="Nama Pelanggan"
                 className="border p-2 rounded w-full mt-2"
-                defaultValue={isEditing ? editPelanggan?.nama : ""}
+                value={formData.nama}
+                onChange={handleInputChange}
               />
               <input
                 type="text"
                 name="alamat"
-                placeholder="alamat"
+                placeholder="Alamat"
                 className="border p-2 rounded w-full mt-2"
-                defaultValue={isEditing ? editPelanggan?.alamat : ""}
+                value={formData.alamat}
+                onChange={handleInputChange}
               />
               <input
-                type="text"
+                type="number"
                 name="hp"
                 placeholder="NO HP"
                 className="border p-2 rounded w-full mt-2"
-                defaultValue={isEditing ? editPelanggan?.hp : ""}
+                value={formData.hp}
+                onChange={handleInputChange}
               />
               <input
                 type="text"
                 name="status"
                 placeholder="Status"
                 className="border p-2 rounded w-full mt-2"
-                defaultValue={isEditing ? editPelanggan?.status : ""}
+                value={formData.status}
+                onChange={handleInputChange}
               />
               <button
                 type="submit"
@@ -202,7 +234,7 @@ export default function PelangganPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setIsModalOpen(false)}
+                onClick={handleModalClose}
                 className="bg-gray-300 text-black px-4 py-2 rounded mt-3 ml-2"
               >
                 Cancel
