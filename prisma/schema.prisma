@@ -14,7 +14,8 @@ datasource db {
 }
 
 model detail_penjualan {
-  id_penjualan      Int      @id @default(autoincrement())
+  id                Int      @id @default(autoincrement())
+  id_penjualan      Int
   id_produk         Int
   harga_jual        Decimal
   qty               Int

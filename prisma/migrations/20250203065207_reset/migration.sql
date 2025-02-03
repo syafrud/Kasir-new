@@ -1,13 +1,14 @@
 -- CreateTable
 CREATE TABLE `detail_penjualan` (
-    `id_penjualan` INTEGER NOT NULL AUTO_INCREMENT,
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `id_penjualan` INTEGER NOT NULL,
     `id_produk` INTEGER NOT NULL,
     `harga_jual` DECIMAL(65, 30) NOT NULL,
     `qty` INTEGER NOT NULL,
     `total_harga` DECIMAL(65, 30) NOT NULL,
     `tanggal_penjualan` DATETIME(3) NOT NULL,
 
-    PRIMARY KEY (`id_penjualan`)
+    PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
@@ -31,7 +32,7 @@ CREATE TABLE `produk` (
     `harga_jual` DECIMAL(65, 30) NOT NULL,
     `stok` INTEGER NOT NULL,
     `barcode` VARCHAR(191) NOT NULL,
-    `created_at` DATETIME(3) NOT NULL,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
 
     PRIMARY KEY (`id`)
@@ -52,7 +53,7 @@ CREATE TABLE `pelanggan` (
     `alamat` VARCHAR(191) NOT NULL,
     `hp` VARCHAR(191) NOT NULL,
     `status` VARCHAR(191) NOT NULL,
-    `created_at` DATETIME(3) NOT NULL,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
 
     UNIQUE INDEX `pelanggan_nama_key`(`nama`),
@@ -62,14 +63,14 @@ CREATE TABLE `pelanggan` (
 -- CreateTable
 CREATE TABLE `users` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `nama_user` VARCHAR(191) NULL,
+    `nama_user` VARCHAR(191) NOT NULL,
     `username` VARCHAR(191) NOT NULL,
     `password` VARCHAR(191) NOT NULL,
-    `user_priv` ENUM('ADMIN', 'PETUGAS') NOT NULL,
+    `user_priv` ENUM('ADMIN', 'PETUGAS') NOT NULL DEFAULT 'PETUGAS',
     `alamat` VARCHAR(191) NOT NULL,
     `hp` VARCHAR(191) NOT NULL,
     `status` VARCHAR(191) NOT NULL,
-    `created_at` DATETIME(3) NOT NULL,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
 
     UNIQUE INDEX `users_username_key`(`username`),
@@ -89,4 +90,4 @@ ALTER TABLE `penjualan` ADD CONSTRAINT `penjualan_id_user_fkey` FOREIGN KEY (`id
 ALTER TABLE `penjualan` ADD CONSTRAINT `penjualan_id_pelanggan_fkey` FOREIGN KEY (`id_pelanggan`) REFERENCES `pelanggan`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `produk` ADD CONSTRAINT `produk_id_kategori_fkey` FOREIGN KEY (`id_kategori`) REFERENCES `kategori`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `produk` ADD CONSTRAINT `produk_id_kategori_fkey` FOREIGN KEY (`id_kategori`) REFERENCES `kategori`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

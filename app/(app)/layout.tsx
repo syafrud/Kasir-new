@@ -82,6 +82,12 @@ export default function RootLayout({
                 </div>
               </li>
               <SidebarLink
+                href="/penjualan"
+                icon={<BarChart size={20} />}
+                label="transaksi"
+                isExpanded={isSidebarExpanded || isHovering}
+              />
+              <SidebarLink
                 href="/kategori-produk"
                 icon={<BarChart size={20} />}
                 label="Kategori Produk"
