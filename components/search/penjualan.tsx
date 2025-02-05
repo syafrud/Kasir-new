@@ -27,25 +27,18 @@ const SearchBar: React.FC<SearchBarProps> = ({
 }) => {
   return (
     <div className="space-y-4">
-      <div className="flex gap-4 items-center">
-        <div className="flex-1">
-          <input
-            type="text"
-            placeholder="Search by staff name..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full p-2 border rounded"
-          />
+      <div className="flex gap-4 items-end">
+        <div className="flex gap-4 ">
+          <div className="flex-1">
+            <input
+              type="text"
+              placeholder="Search by staff name..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full p-2 border rounded"
+            />
+          </div>
         </div>
-        <button
-          onClick={onAddNew}
-          className="bg-green-500 text-white px-4 py-2 rounded"
-        >
-          Add New
-        </button>
-      </div>
-
-      <div className="flex gap-4">
         <div className="flex-1 space-y-2">
           <label className="block text-sm font-medium">Date Range</label>
           <div className="flex gap-2">
@@ -91,6 +84,13 @@ const SearchBar: React.FC<SearchBarProps> = ({
             />
           </div>
         </div>
+
+        <button
+          onClick={onAddNew}
+          className="bg-green-500 text-white px-4 py-2 rounded h-3/4"
+        >
+          Add New
+        </button>
       </div>
     </div>
   );
