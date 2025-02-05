@@ -6,9 +6,8 @@ import {
   updatePenjualan,
   deletePenjualan,
 } from "@/app/api/penjualan/actions";
-import SearchBar from "@/components/search";
 import toast from "react-hot-toast";
-import { log } from "console";
+import SearchBar from "@/components/search/penjualan";
 
 interface Penjualan {
   id: number;
@@ -44,10 +43,22 @@ export default function PenjualanPage() {
   const [userOptions, setUserOptions] = useState<User[]>([]);
   const [pelangganOptions, setPelangganOptions] = useState<Pelanggan[]>([]);
   const [search, setSearch] = useState("");
+  const [dateRange, setDateRange] = useState({
+    startDate: "",
+    endDate: "",
+  });
+  const [totalRange, setTotalRange] = useState({
+    minTotal: "",
+    maxTotal: "",
+  });
   const [error, setError] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [editPenjualan, setEditPenjualan] = useState<Penjualan | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [penjualanToDelete, setPenjualanToDelete] = useState<number | null>(
+    null
+  );
 
   const [formData, setFormData] = useState<FormData>({
     id_user: "",
@@ -56,11 +67,6 @@ export default function PenjualanPage() {
     total_harga: "",
     tanggal_penjualan: new Date().toISOString(),
   });
-
-  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-  const [penjualanToDelete, setPenjualanToDelete] = useState<number | null>(
-    null
-  );
 
   const formatTanggal = (date: Date) => {
     const options: Intl.DateTimeFormatOptions = {
@@ -76,7 +82,6 @@ export default function PenjualanPage() {
 
     const dateObj = new Date(date);
 
-    // Format time as HH.mm.ss
     const time = dateObj
       .toLocaleTimeString("id-ID", {
         hour: "2-digit",
@@ -86,7 +91,6 @@ export default function PenjualanPage() {
       })
       .replace(/:/g, ".");
 
-    // Format date as "Sen, 3 Feb 2025"
     const dateStr = dateObj.toLocaleDateString("id-ID", {
       weekday: "short",
       day: "numeric",
@@ -99,9 +103,17 @@ export default function PenjualanPage() {
 
   const fetchPenjualan = async () => {
     try {
-      const res = await fetch(
-        `/api/penjualan?search=${encodeURIComponent(search)}`
-      );
+      const searchParams = new URLSearchParams();
+      if (search) searchParams.append("search", search);
+      if (dateRange.startDate)
+        searchParams.append("startDate", dateRange.startDate);
+      if (dateRange.endDate) searchParams.append("endDate", dateRange.endDate);
+      if (totalRange.minTotal)
+        searchParams.append("minTotal", totalRange.minTotal);
+      if (totalRange.maxTotal)
+        searchParams.append("maxTotal", totalRange.maxTotal);
+
+      const res = await fetch(`/api/penjualan?${searchParams.toString()}`);
       if (!res.ok) {
         const errorText = await res.text();
         setError(errorText || "Failed to fetch penjualan");
@@ -117,7 +129,13 @@ export default function PenjualanPage() {
 
   useEffect(() => {
     fetchPenjualan();
-  }, [search]);
+  }, [
+    search,
+    dateRange.startDate,
+    dateRange.endDate,
+    totalRange.minTotal,
+    totalRange.maxTotal,
+  ]);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -140,7 +158,6 @@ export default function PenjualanPage() {
     setIsEditing(true);
     setEditPenjualan(penjualan);
 
-    // Convert the date to match the input format
     const date = new Date(penjualan.tanggal_penjualan);
     const formattedDate = date.toISOString();
 
@@ -231,6 +248,10 @@ export default function PenjualanPage() {
       <SearchBar
         search={search}
         setSearch={setSearch}
+        dateRange={dateRange}
+        setDateRange={setDateRange}
+        totalRange={totalRange}
+        setTotalRange={setTotalRange}
         onAddNew={handleAddNew}
       />
 
