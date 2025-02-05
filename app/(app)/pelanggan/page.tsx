@@ -69,7 +69,7 @@ export default function PelangganPage() {
     setFormData({
       nama: pelanggan.nama,
       alamat: pelanggan.alamat,
-      hp: pelanggan.hp,
+      hp: pelanggan.hp.toString(),
       status: pelanggan.status,
     });
     setIsModalOpen(true);

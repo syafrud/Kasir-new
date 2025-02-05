@@ -43,7 +43,11 @@ export default function KategoriPage() {
       const data = await res.json();
       setKategori(data);
     } catch (error) {
-      setError(error?.message || "An unexpected error occurred");
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("An unexpected error occurred");
+      }
     }
   };
 
@@ -70,7 +74,11 @@ export default function KategoriPage() {
       await deleteKategori(kategoriToDelete);
       fetchKategori();
     } catch (error) {
-      setError(error?.message || "An error occurred while deleting.");
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("An error occurred while deleting.");
+      }
     } finally {
       setIsConfirmOpen(false);
       setKategoriToDelete(null);

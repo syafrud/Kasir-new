@@ -54,7 +54,11 @@ export default function ProdukPage() {
       const data = await res.json();
       setProduk(data);
     } catch (error) {
-      setError(error?.message || "An unexpected error occurred");
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("An unexpected error occurred");
+      }
     }
   };
 
@@ -98,7 +102,11 @@ export default function ProdukPage() {
       await deleteProduk(produkToDelete);
       fetchProduk();
     } catch (error) {
-      toast.error(error?.message || "Terjadi kesalahan saat menghapus data");
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("Terjadi kesalahan saat menghapus data");
+      }
     } finally {
       setIsConfirmOpen(false);
       setProdukToDelete(null);

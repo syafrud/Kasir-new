@@ -123,7 +123,11 @@ export default function PenjualanPage() {
       const data = await res.json();
       setPenjualan(data);
     } catch (error) {
-      setError(error?.message || "An unexpected error occurred");
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("An unexpected error occurred");
+      }
     }
   };
 
@@ -184,7 +188,11 @@ export default function PenjualanPage() {
       fetchPenjualan();
       toast.success("Data berhasil dihapus");
     } catch (error) {
-      toast.error(error?.message || "Terjadi kesalahan saat menghapus data");
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("Terjadi kesalahan saat menghapus data");
+      }
     } finally {
       setIsConfirmOpen(false);
       setPenjualanToDelete(null);
@@ -211,7 +219,11 @@ export default function PenjualanPage() {
       setIsEditing(false);
       setEditPenjualan(null);
     } catch (error) {
-      toast.error(error?.message || "Terjadi kesalahan saat menyimpan data");
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("Terjadi kesalahan saat menyimpan data.");
+      }
     }
   };
 
