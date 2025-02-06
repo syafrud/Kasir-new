@@ -48,14 +48,6 @@ export async function updateUser(formdata: FormData, id: number) {
   const password = formdata.get("password") as string;
   const hashed = await hash(password, 12);
 
-  const existingUser = await prisma.users.findUnique({
-    where: { username },
-  });
-
-  if (existingUser) {
-    throw new Error("Username already taken");
-  }
-
   await prisma.users.update({
     where: { id },
     data: {
