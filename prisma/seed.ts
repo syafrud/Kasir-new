@@ -6,11 +6,11 @@ const prisma = new PrismaClient();
 async function main() {
   const password = await hash("test", 32);
   const user = await prisma.users.upsert({
-    where: { username: "admin" },
+    where: { username: "test" },
     update: { password },
     create: {
-      username: "admin",
-      nama_user: "Admin User",
+      username: "test",
+      nama_user: "Test User",
       password,
       user_priv: "ADMIN",
       alamat: "Some Address",
