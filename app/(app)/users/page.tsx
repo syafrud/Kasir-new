@@ -161,6 +161,7 @@ export default function UserPage() {
       setError("");
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred.");
+      toast.error(err.message);
     }
   };
 
@@ -177,8 +178,6 @@ export default function UserPage() {
   return (
     <div className="">
       <h1 className="text-2xl font-bold mb-4">User Management</h1>
-
-      {error && <div className="text-red-500 mb-4">{error}</div>}
 
       <SearchBar
         search={search}

@@ -105,18 +105,22 @@ export default function PelangganPage() {
     Object.entries(formData).forEach(([key, value]) => {
       submitData.append(key, value);
     });
-
-    if (isEditing && editPelanggan) {
-      await updatePelanggan(submitData, editPelanggan.id);
-      toast.success("Data berhasil diperbarui");
-    } else {
-      await createPelanggan(submitData);
-      toast.success("Data berhasil ditambahkan");
+    try {
+      if (isEditing && editPelanggan) {
+        await updatePelanggan(submitData, editPelanggan.id);
+        toast.success("Data berhasil diperbarui");
+      } else {
+        await createPelanggan(submitData);
+        toast.success("Data berhasil ditambahkan");
+      }
+      fetchPelanggan();
+      setIsModalOpen(false);
+      setIsEditing(false);
+      setEditPelanggan(null);
+    } catch (err: any) {
+      setError(err.message || "An unexpected error occurred.");
+      toast.error(err.message);
     }
-    fetchPelanggan();
-    setIsModalOpen(false);
-    setIsEditing(false);
-    setEditPelanggan(null);
   };
 
   const handleAddNew = () => {

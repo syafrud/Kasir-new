@@ -44,9 +44,21 @@ export async function updateUser(formdata: FormData, id: number) {
   if (!UserRoles.includes(userPriv as UserRole)) {
     throw new Error("Invalid user_priv value");
   }
+
   const username = formdata.get("username") as string;
   const password = formdata.get("password") as string;
   const hashed = await hash(password, 12);
+
+  const existingUser = await prisma.users.findFirst({
+    where: {
+      username,
+      id: { not: id },
+    },
+  });
+
+  if (existingUser) {
+    throw new Error("Username already taken");
+  }
 
   await prisma.users.update({
     where: { id },

@@ -1,7 +1,7 @@
 "use client";
 import SidebarLink from "@/components/ui/link";
 import "../globals.css";
-import { BarChart, LogOut, User, Menu } from "lucide-react";
+import { BarChart, LogOut, User, Menu, LayoutDashboard } from "lucide-react";
 import { useState } from "react";
 import { LogoutButton } from "../auth";
 import { Providers } from "../providers";
@@ -71,7 +71,7 @@ export default function RootLayout({
                     isSidebarExpanded || isHovering ? "hidden" : "block"
                   }`}
                 >
-                  ...
+                  <LayoutDashboard size={20} />
                 </div>
                 <div
                   className={`text-white font-bold ${

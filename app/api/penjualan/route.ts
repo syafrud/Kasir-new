@@ -27,7 +27,8 @@ export async function GET(request: NextRequest) {
           {
             users: {
               nama_user: {
-                contains: search.trim().toLowerCase(),
+                contains: search.trim(),
+                mode: "insensitive",
               },
             },
           },
