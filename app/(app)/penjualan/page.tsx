@@ -8,6 +8,7 @@ import {
 } from "@/app/api/penjualan/actions";
 import toast from "react-hot-toast";
 import SearchBar from "@/components/search/penjualan";
+import { useRouter } from "next/navigation";
 
 interface Penjualan {
   id: number;
@@ -39,6 +40,7 @@ interface FormData {
 }
 
 export default function PenjualanPage() {
+  const router = useRouter();
   const [penjualan, setPenjualan] = useState<Penjualan[]>([]);
   const [userOptions, setUserOptions] = useState<User[]>([]);
   const [pelangganOptions, setPelangganOptions] = useState<Pelanggan[]>([]);
@@ -67,6 +69,10 @@ export default function PenjualanPage() {
     total_harga: "",
     tanggal_penjualan: new Date().toISOString(),
   });
+
+  const handleDetail = (id: number) => {
+    router.push(`/penjualan/${id}`);
+  };
 
   const formatTanggal = (date: Date) => {
     const options: Intl.DateTimeFormatOptions = {
@@ -306,6 +312,12 @@ export default function PenjualanPage() {
                   className="w-1/2 bg-red-500 text-white px-4 py-2 rounded"
                 >
                   Delete
+                </button>
+                <button
+                  onClick={() => handleDetail(item.id)}
+                  className="w-1/2 bg-green-500 text-white px-4 py-2 rounded"
+                >
+                  Detail
                 </button>
               </td>
             </tr>
