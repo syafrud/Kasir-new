@@ -17,6 +17,7 @@ interface Produk {
   harga_beli: string;
   harga_jual: string;
   stok: string;
+  stok_tersisa: string;
   barcode: string;
 }
 
@@ -186,7 +187,7 @@ export default function ProdukPage() {
               <td className="border p-2">{produk.kategori?.nama_kategori}</td>
               <td className="border p-2 text-center">{produk.harga_beli}</td>
               <td className="border p-2">{produk.harga_jual}</td>
-              <td className="border p-2 text-right">{produk.stok}</td>
+              <td className="border p-2 text-right">{produk.stok_tersisa}</td>
               <td className="border p-2 text-center">{produk.barcode}</td>
               <td className="flex flex-row border gap-3 p-3">
                 <button

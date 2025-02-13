@@ -1,11 +1,25 @@
 "use client";
 import SidebarLink from "@/components/ui/link";
 import "../globals.css";
-import { BarChart, LogOut, User, Menu, LayoutDashboard } from "lucide-react";
+import {
+  LogOut,
+  User,
+  Menu,
+  LayoutDashboard,
+  Shield,
+  Users,
+  Tags,
+  Boxes,
+  Package,
+  ShoppingCart,
+} from "lucide-react";
+import Image from "next/image";
 import { useState } from "react";
 import { LogoutButton } from "../auth";
 import { Providers } from "../providers";
 import { Toaster } from "react-hot-toast";
+import { Accordion } from "@/components/ui/accordion";
+import SidebarALink from "@/components/ui/link/accordion";
 
 export default function RootLayout({
   children,
@@ -23,8 +37,18 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <div className="relative z-[1000]">
-          {/* Navbar */}
-          <div className="topbar fixed top-0 left-0 w-full h-[70px] flex items-center bg-gradient-to-r from-[#0178bc] to-[#00bdda] shadow-md">
+          <div className="topbar fixed top-0 left-0 w-full h-[62px] flex items-center bg-[#0178bc] z-50 shadow-lg">
+            <div className="bg-white w-[276px] h-full flex items-center px-3 gap-3">
+              <Image
+                src="/logo.png"
+                alt="IndoKasir Logo"
+                width={500}
+                height={300}
+                className="w-full"
+              />
+            </div>
+
+            {/* Sidebar Toggle */}
             <div className="flex items-center w-[70px] justify-center">
               <button
                 onClick={toggleSidebar}
@@ -33,6 +57,7 @@ export default function RootLayout({
                 <Menu size={24} />
               </button>
             </div>
+
             <div className="flex justify-between items-center w-full px-5">
               <a href="/ " className="text-white font-bold">
                 Kasir
@@ -58,23 +83,36 @@ export default function RootLayout({
 
           {/* Sidebar */}
           <div
-            className={`sidebar fixed top-[70px] left-0 h-screen ${
+            className={`sidebar fixed top-[62px] left-0 h-screen ${
               isSidebarExpanded || isHovering ? "w-[225px]" : "w-[70px]"
-            } bg-[#363D4A] flex flex-col gap-6 py-5 px-3 overflow-y-auto no-scrollbar transition-all duration-300 shadow-xl`}
+            } bg-[#ffffff] flex flex-col gap-6 py-5 px-3 overflow-y-auto no-scrollbar transition-all duration-300 shadow-xl z-20`}
             onMouseEnter={() => setHovering(true)}
             onMouseLeave={() => setHovering(false)}
           >
             <ul className="flex flex-col gap-3">
               <li className="px-3">
+                {isSidebarExpanded || isHovering ? (
+                  <div className="text-2xl font-bold text-center">
+                    <span className="text-[#009965]">Kasir</span>
+                    <span className="text-[#E79B2C]">Pintar</span>
+                  </div>
+                ) : (
+                  <div className="flex justify-center text-center text-xl font-bold tracking-wide">
+                    <span className="text-[#009965]">K</span>
+                    <span className="text-[#E79B2C]">P</span>
+                  </div>
+                )}
+                <div className="border-b-2 border-gray-300 mt-1 mb-2"></div>
+
                 <div
-                  className={`text-white font-bold text-center uppercase ${
+                  className={`text-[#485371] font-bold text-center uppercase ${
                     isSidebarExpanded || isHovering ? "hidden" : "block"
                   }`}
                 >
                   <LayoutDashboard size={20} />
                 </div>
                 <div
-                  className={`text-white font-bold ${
+                  className={`text-[#485371] font-bold ${
                     isSidebarExpanded || isHovering ? "block" : "hidden"
                   }`}
                 >
@@ -83,31 +121,37 @@ export default function RootLayout({
               </li>
               <SidebarLink
                 href="/penjualan"
-                icon={<BarChart size={20} />}
-                label="transaksi"
+                icon={<ShoppingCart size={20} />}
+                label="Transaksi"
                 isExpanded={isSidebarExpanded || isHovering}
               />
-              <SidebarLink
-                href="/produk"
-                icon={<BarChart size={20} />}
-                label="Produk"
+              <Accordion
+                title="Produk"
+                icon={<Package size={20} />}
                 isExpanded={isSidebarExpanded || isHovering}
-              />
-              <SidebarLink
-                href="/kategori-produk"
-                icon={<BarChart size={20} />}
-                label="Kategori Produk"
-                isExpanded={isSidebarExpanded || isHovering}
-              />
+              >
+                <SidebarALink
+                  href="/produk"
+                  icon={<Boxes size={20} />}
+                  label="Produk"
+                  isExpanded={isSidebarExpanded || isHovering}
+                />
+                <SidebarALink
+                  href="/kategori-produk"
+                  icon={<Tags size={20} />}
+                  label="Kategori Produk"
+                  isExpanded={isSidebarExpanded || isHovering}
+                />
+              </Accordion>
               <SidebarLink
                 href="/pelanggan"
-                icon={<BarChart size={20} />}
+                icon={<Users size={20} />}
                 label="Pelanggan"
                 isExpanded={isSidebarExpanded || isHovering}
               />
               <SidebarLink
                 href="/users"
-                icon={<BarChart size={20} />}
+                icon={<Shield size={20} />}
                 label="Users"
                 isExpanded={isSidebarExpanded || isHovering}
               />
@@ -116,9 +160,9 @@ export default function RootLayout({
 
           {/* Content */}
           <div
-            className={`${
+            className={` bg-[#ECF3F7]  h-[calc(100vh-62px)] ${
               isSidebarExpanded ? "ml-[225px]" : "ml-[70px]"
-            } mt-[70px] transition-all duration-300 w-[calc(100vw-${
+            }  mt-[62px] transition-all duration-300 w-[calc(100vw-${
               isSidebarExpanded ? "225px" : "70px"
             })]`}
           >
@@ -134,9 +178,21 @@ export default function RootLayout({
                 },
               }}
             />
-            <div className="p-10">
-              <Providers>{children}</Providers>
-            </div>
+            <Providers>
+              <div className="p-5 ">
+                <div className="p-5 rounded-lg bg-white">{children}</div>
+              </div>
+              <div
+                className={`fixed bottom-0 bg-white py-3 border-t text-center shadow-xl transition-all duration-300 ${
+                  isSidebarExpanded
+                    ? "ml-[0px] w-[calc(100vw-225px)]"
+                    : "ml-[0px] w-[calc(100vw-70px)]"
+                }`}
+                style={{ zIndex: 10 }}
+              >
+                © {new Date().getFullYear()} IndoKasir. All rights reserved.
+              </div>
+            </Providers>
           </div>
         </div>
       </body>

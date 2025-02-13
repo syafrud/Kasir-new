@@ -11,7 +11,7 @@ interface SidebarLinkProps {
   isExpanded: boolean;
 }
 
-export default function SidebarLink({
+export default function SidebarALink({
   href,
   icon,
   label,
@@ -23,16 +23,16 @@ export default function SidebarLink({
   return (
     <li
       className={`rounded-md transition ${
-        isActive ? "bg-blue-600 text-white" : "hover:bg-gray-200"
+        isActive ? "bg-gray-300 text-black" : "hover:bg-gray-200"
       }`}
     >
       <Link href={href} className="flex items-center gap-4 px-3 py-2">
-        <div className={`${isActive ? "text-white" : "text-gray-600"}`}>
+        <div className={`${isActive ? "text-black" : "text-gray-600"}`}>
           {icon}
         </div>
         <div
           className={`${isExpanded ? "block" : "hidden"} ${
-            isActive ? "text-white" : "text-gray-600"
+            isActive ? "text-black" : "text-gray-600"
           }`}
         >
           {label}

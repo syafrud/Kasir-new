@@ -20,11 +20,28 @@ export async function GET(request: NextRequest) {
         kategori: {
           select: { nama_kategori: true },
         },
+        detail_penjualan: {
+          select: {
+            qty: true,
+          },
+        },
       },
       orderBy: { id: "asc" },
     });
 
-    return NextResponse.json(produk, { status: 200 });
+    // Hitung stok yang tersisa setelah dikurangi `qty` dari `detail_penjualan`
+    const produkWithUpdatedStock = produk.map((item) => {
+      const totalQty = item.detail_penjualan.reduce(
+        (sum, dp) => sum + dp.qty,
+        0
+      );
+      return {
+        ...item,
+        stok_tersisa: Math.max(item.stok - totalQty, 0), // Pastikan tidak negatif
+      };
+    });
+
+    return NextResponse.json(produkWithUpdatedStock, { status: 200 });
   } catch (error) {
     console.error("Prisma error:", error);
     return NextResponse.json(
