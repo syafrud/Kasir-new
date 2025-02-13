@@ -1,3 +1,3 @@
-export default function Page() {
+export default function Page(props) {
   return <main>Hello</main>;
 }

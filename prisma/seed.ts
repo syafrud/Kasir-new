@@ -13,7 +13,8 @@ async function main() {
       nama_user: "Admin User",
       password,
       user_priv: "ADMIN",
-      alamat: "Some Address",
+      alamat:
+        "Jalan Parangtritis Km. 11, Dukuh, Sabdodadi, Bantul, Kabupaten Bantul, DI Yogyakarta, Indonesia · (0274) 367156.",
       hp: "1234567890",
       status: "active",
       created_at: new Date(),
