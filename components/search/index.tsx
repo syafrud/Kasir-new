@@ -3,29 +3,21 @@
 interface SearchBarProps {
   search: string;
   setSearch: (value: string) => void;
-  onAddNew: () => void;
 }
 
-export default function SearchBar({
-  search,
-  setSearch,
-  onAddNew,
-}: SearchBarProps) {
+export default function SearchBar({ search, setSearch }: SearchBarProps) {
   return (
-    <div className="mb-4 flex gap-2">
+    <div className="flex flex-1 gap-2 flex-row items-center">
+      <label htmlFor="search" className="text-gray-600">
+        Search :
+      </label>
       <input
         type="text"
-        placeholder="Searchs users"
-        className="border p-2 rounded w-full"
+        placeholder="Searchs username"
+        className="border p-1 rounded flex-1"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />
-      <button
-        onClick={onAddNew}
-        className="bg-green-500 text-white px-4 py-2 rounded"
-      >
-        Add New
-      </button>
     </div>
   );
 }

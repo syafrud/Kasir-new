@@ -58,10 +58,7 @@ export default function RootLayout({
               </button>
             </div>
 
-            <div className="flex justify-between items-center w-full px-5">
-              <a href="/ " className="text-white font-bold">
-                Kasir
-              </a>
+            <div className="flex justify-end items-center w-full px-5">
               <div className="flex items-center gap-4">
                 <a
                   href="#"
@@ -90,7 +87,7 @@ export default function RootLayout({
             onMouseLeave={() => setHovering(false)}
           >
             <ul className="flex flex-col gap-3">
-              <li className="px-3">
+              <li className="px-1">
                 {isSidebarExpanded || isHovering ? (
                   <div className="text-2xl font-bold text-center">
                     <span className="text-[#009965]">Kasir</span>
@@ -102,10 +99,9 @@ export default function RootLayout({
                     <span className="text-[#E79B2C]">P</span>
                   </div>
                 )}
-                <div className="border-b-2 border-gray-300 mt-1 mb-2"></div>
-
+                <div className="border-b-2 border-gray-300 mt-1 mb-2 "></div>
                 <div
-                  className={`text-[#485371] font-bold text-center uppercase ${
+                  className={`text-[#485371] font-bold text-center uppercase px-2 ${
                     isSidebarExpanded || isHovering ? "hidden" : "block"
                   }`}
                 >
@@ -119,6 +115,7 @@ export default function RootLayout({
                   Dashboard
                 </div>
               </li>
+
               <SidebarLink
                 href="/penjualan"
                 icon={<ShoppingCart size={20} />}

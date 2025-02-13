@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { createUser, updateUser, deleteUser } from "@/app/api/user/actions";
 import SearchBar from "@/components/search";
 import toast from "react-hot-toast";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 
 interface User {
   id: number;
@@ -25,8 +26,18 @@ interface FormData {
   status: string;
 }
 
+interface PaginationData {
+  users: User[];
+  totalCount: number;
+  totalPages: number;
+  currentPage: number;
+}
 export default function UserPage() {
   const [users, setUsers] = useState<User[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
   const [search, setSearch] = useState("");
   const [error, setError] = useState("");
   const [isEditing, setIsEditing] = useState(false);
@@ -51,15 +62,22 @@ export default function UserPage() {
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch(`/api/user?search=${encodeURIComponent(search)}`);
+      const res = await fetch(
+        `/api/user?search=${encodeURIComponent(
+          search
+        )}&page=${currentPage}&limit=${itemsPerPage}`
+      );
+
       if (!res.ok) {
         const errorText = await res.text();
         setError(errorText || "Failed to fetch users");
         return;
       }
 
-      const data = await res.json();
-      setUsers(data);
+      const data: PaginationData = await res.json();
+      setUsers(data.users);
+      setTotalPages(data.totalPages);
+      setTotalCount(data.totalCount);
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);
@@ -71,7 +89,22 @@ export default function UserPage() {
 
   useEffect(() => {
     fetchUsers();
-  }, [search]);
+  }, [search, currentPage, itemsPerPage]);
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+  };
+
+  const handleItemsPerPageChange = (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    const newLimit = parseInt(e.target.value);
+    setItemsPerPage(newLimit);
+    setCurrentPage(1);
+  };
+
+  const startIndex = (currentPage - 1) * itemsPerPage + 1;
+  const endIndex = Math.min(startIndex + itemsPerPage - 1, totalCount);
 
   const handleEdit = (user: User) => {
     setIsEditing(true);
@@ -179,53 +212,122 @@ export default function UserPage() {
     <div className="">
       <h1 className="text-2xl font-bold mb-4">User Management</h1>
 
-      <SearchBar
-        search={search}
-        setSearch={setSearch}
-        onAddNew={handleAddNew}
-      />
+      <div className="flex flex-row gap-5 items-center text-center mb-3">
+        <div className="flex items-center gap-4">
+          <span className="text-gray-600">Show</span>
+          <select
+            value={itemsPerPage}
+            onChange={handleItemsPerPageChange}
+            className="border rounded px-2 py-1 focus:outline-none focus:ring focus:ring-green-300"
+          >
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+          </select>
+          <span className="text-gray-600">entries</span>
+        </div>
 
-      <table className="border-collapse border border-gray-200 mt-6">
+        <SearchBar search={search} setSearch={setSearch} />
+
+        <button
+          onClick={handleAddNew}
+          className="flex items-center gap-2 bg-green-500 text-white px-3 my-1 py-1 rounded-lg hover:bg-green-600 transition"
+        >
+          <Plus size={20} />
+          Add New
+        </button>
+      </div>
+
+      <table className="w-full border-collapse border border-gray-200">
         <thead>
-          <tr>
-            <th className="border p-2">NO</th>
-            <th className="border p-2 w-1/6">Nama User</th>
-            <th className="border p-2 w-1/6">Username</th>
-            <th className="border p-2 w-1/6">Privilege</th>
-            <th className="border p-2 w-1/6">Alamat</th>
-            <th className="border p-2 w-1/6">HP</th>
-            <th className="border p-2 w-1/6">Status</th>
-            <th className="border py-2 px-16 w-52">Actions</th>
+          <tr className="bg-gray-50">
+            <th className="border p-2 text-left">Nama User</th>
+            <th className="border p-2 text-left">Username</th>
+            <th className="border p-2 text-center">Role</th>
+            <th className="border p-2 text-left">Alamat</th>
+            <th className="border p-2 text-left">HP</th>
+            <th className="border p-2 text-center">Status</th>
+            <th className="border p-2 text-center">Aksi</th>
           </tr>
         </thead>
         <tbody>
-          {users.map((user, index) => (
+          {users.map((user) => (
             <tr key={user.id}>
-              <td className="border p-2 text-center">{index + 1}</td>
               <td className="border p-2">{user.nama_user}</td>
               <td className="border p-2">{user.username}</td>
-              <td className="border p-2 text-center">{user.user_priv}</td>
-              <td className="border p-2">{user.alamat}</td>
-              <td className="border p-2 text-right">{user.hp}</td>
+              <td className="border p-2 text-center">
+                <span className="bg-gray-600 text-white px-2 py-1 rounded text-sm">
+                  {user.user_priv}
+                </span>
+              </td>
+              <td className="border p-2 max-w-72">{user.alamat}</td>
+              <td className="border p-2">{user.hp}</td>
               <td className="border p-2 text-center">{user.status}</td>
-              <td className="flex flex-row border gap-3 p-3">
-                <button
-                  onClick={() => handleEdit(user)}
-                  className="w-1/2 bg-blue-500 text-white px-4 py-2 rounded"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => openConfirmModal(user.id)}
-                  className="w-1/2 bg-red-500 text-white px-4 py-2 rounded"
-                >
-                  Delete
-                </button>
+              <td className="border p-2">
+                <div className="flex justify-center gap-2">
+                  <button
+                    onClick={() => handleEdit(user)}
+                    className="bg-blue-500 text-white px-3 py-1 rounded flex items-center gap-1"
+                  >
+                    <Pencil size={16} />
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => openConfirmModal(user.id)}
+                    className="bg-red-500 text-white px-3 py-1 rounded flex items-center gap-1"
+                  >
+                    <Trash2 size={16} />
+                    Delete
+                  </button>
+                </div>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+
+      <div className="flex justify-between items-center mt-4">
+        <div>
+          Showing {totalCount > 0 ? startIndex : 0} to {endIndex} of{" "}
+          {totalCount} entries
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className={`px-3 py-1 border rounded ${
+              currentPage === 1 ? "bg-gray-100" : "hover:bg-gray-100"
+            }`}
+          >
+            Previous
+          </button>
+
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            <button
+              key={page}
+              onClick={() => handlePageChange(page)}
+              className={`px-3 py-1 border rounded ${
+                currentPage === page
+                  ? "bg-blue-500 text-white"
+                  : "hover:bg-gray-100"
+              }`}
+            >
+              {page}
+            </button>
+          ))}
+
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className={`px-3 py-1 border rounded ${
+              currentPage === totalPages ? "bg-gray-100" : "hover:bg-gray-100"
+            }`}
+          >
+            Next
+          </button>
+        </div>
+      </div>
 
       {/* Modal Create/Update*/}
       {isModalOpen && (
