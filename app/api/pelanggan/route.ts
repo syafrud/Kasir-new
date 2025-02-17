@@ -4,9 +4,20 @@ import prisma from "@/lib/db";
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const search = searchParams.get("search");
+    const search = searchParams.get("search") || "";
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "5");
+    const skip = (page - 1) * limit;
 
-    console.log("Raw search parameter:", search);
+    const totalCount = await prisma.pelanggan.count({
+      where: search
+        ? {
+            nama: {
+              contains: search.trim().toLowerCase(),
+            },
+          }
+        : undefined,
+    });
 
     const pelanggan = await prisma.pelanggan.findMany({
       where: search
@@ -17,11 +28,19 @@ export async function GET(request: NextRequest) {
           }
         : undefined,
       orderBy: { id: "asc" },
+      skip,
+      take: limit,
     });
 
-    console.log("Kategori results:", pelanggan);
-
-    return NextResponse.json(pelanggan, { status: 200 });
+    return NextResponse.json(
+      {
+        pelanggan,
+        totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        currentPage: page,
+      },
+      { status: 200 }
+    );
   } catch (error) {
     console.error("Prisma error:", error);
     return NextResponse.json(

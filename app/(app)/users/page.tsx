@@ -32,6 +32,7 @@ interface PaginationData {
   totalPages: number;
   currentPage: number;
 }
+
 export default function UserPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -117,6 +118,7 @@ export default function UserPage() {
       hp: user.hp,
       status: user.status,
     });
+
     setIsModalOpen(true);
     setPassword("");
     setConfirmPassword("");

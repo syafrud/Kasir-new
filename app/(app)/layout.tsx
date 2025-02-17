@@ -157,7 +157,7 @@ export default function RootLayout({
 
           {/* Content */}
           <div
-            className={` bg-[#ECF3F7]  h-[calc(100vh-62px)] ${
+            className={` bg-[#ECF3F7]  min-h-[calc(100vh-62px)] ${
               isSidebarExpanded ? "ml-[225px]" : "ml-[70px]"
             }  mt-[62px] transition-all duration-300 w-[calc(100vw-${
               isSidebarExpanded ? "225px" : "70px"
@@ -175,12 +175,13 @@ export default function RootLayout({
                 },
               }}
             />
+
             <Providers>
-              <div className="p-5 ">
+              <div className="p-5 min-h-[calc(100vh-111px)]  ">
                 <div className="p-5 rounded-lg bg-white">{children}</div>
               </div>
               <div
-                className={`fixed bottom-0 bg-white py-3 border-t text-center shadow-xl transition-all duration-300 ${
+                className={` bottom-0 bg-white py-3 border-t text-center shadow-xl transition-all duration-300 ${
                   isSidebarExpanded
                     ? "ml-[0px] w-[calc(100vw-225px)]"
                     : "ml-[0px] w-[calc(100vw-70px)]"
