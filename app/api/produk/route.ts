@@ -4,9 +4,20 @@ import prisma from "@/lib/db";
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const search = searchParams.get("search");
+    const search = searchParams.get("search") || "";
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "5");
+    const skip = (page - 1) * limit;
 
-    console.log("Raw search parameter:", search);
+    const totalCount = await prisma.produk.count({
+      where: search
+        ? {
+            nama_produk: {
+              contains: search.trim().toLowerCase(),
+            },
+          }
+        : undefined,
+    });
 
     const produk = await prisma.produk.findMany({
       where: search
@@ -27,9 +38,10 @@ export async function GET(request: NextRequest) {
         },
       },
       orderBy: { id: "asc" },
+      skip,
+      take: limit,
     });
 
-    // Hitung stok yang tersisa setelah dikurangi `qty` dari `detail_penjualan`
     const produkWithUpdatedStock = produk.map((item) => {
       const totalQty = item.detail_penjualan.reduce(
         (sum, dp) => sum + dp.qty,
@@ -41,7 +53,15 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    return NextResponse.json(produkWithUpdatedStock, { status: 200 });
+    return NextResponse.json(
+      {
+        produkWithUpdatedStock,
+        totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        currentPage: page,
+      },
+      { status: 200 }
+    );
   } catch (error) {
     console.error("Prisma error:", error);
     return NextResponse.json(

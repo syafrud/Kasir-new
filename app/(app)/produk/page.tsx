@@ -8,6 +8,7 @@ import {
 } from "@/app/api/produk/actions";
 import SearchBar from "@/components/search";
 import toast from "react-hot-toast";
+import { Plus } from "lucide-react";
 
 interface Produk {
   id: number;
@@ -21,9 +22,25 @@ interface Produk {
   barcode: string;
 }
 
+interface Kategori {
+  id: number;
+  nama_kategori: string;
+}
+
+interface PaginationData {
+  produkWithUpdatedStock: Produk[];
+  totalCount: number;
+  totalPages: number;
+  currentPage: number;
+}
+
 export default function ProdukPage() {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
   const [produks, setProduk] = useState<Produk[]>([]);
-  const [kategoriOptions, setProdukOptions] = useState<any[]>([]);
+  const [kategoriOptions, setKategoriOptions] = useState<Kategori[]>([]);
   const [search, setSearch] = useState("");
   const [error, setError] = useState("");
   const [isEditing, setIsEditing] = useState(false);
@@ -44,7 +61,9 @@ export default function ProdukPage() {
   const fetchProduk = async () => {
     try {
       const res = await fetch(
-        `/api/produk?search=${encodeURIComponent(search)}`
+        `/api/produk?search=${encodeURIComponent(
+          search
+        )}&page=${currentPage}&limit=${itemsPerPage}`
       );
       if (!res.ok) {
         const errorText = await res.text();
@@ -52,8 +71,10 @@ export default function ProdukPage() {
         return;
       }
 
-      const data = await res.json();
-      setProduk(data);
+      const data: PaginationData = await res.json();
+      setProduk(data.produkWithUpdatedStock);
+      setTotalPages(data.totalPages);
+      setTotalCount(data.totalCount);
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);
@@ -65,17 +86,45 @@ export default function ProdukPage() {
 
   useEffect(() => {
     fetchProduk();
-  }, [search]);
+  }, [search, currentPage, itemsPerPage]);
 
   useEffect(() => {
     const fetchKategori = async () => {
-      const response = await fetch("/api/kategori");
-      const data = await response.json();
-      setProdukOptions(data);
+      try {
+        const response = await fetch("/api/produk/kategori");
+        if (!response.ok) {
+          throw new Error("Failed to fetch categories");
+        }
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          setKategoriOptions(data);
+        } else {
+          console.error("Kategori data is not an array:", data);
+          setKategoriOptions([]);
+        }
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+        setKategoriOptions([]);
+      }
     };
 
     fetchKategori();
   }, []);
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+  };
+
+  const handleItemsPerPageChange = (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    const newLimit = parseInt(e.target.value);
+    setItemsPerPage(newLimit);
+    setCurrentPage(1);
+  };
+
+  const startIndex = (currentPage - 1) * itemsPerPage + 1;
+  const endIndex = Math.min(startIndex + itemsPerPage - 1, totalCount);
 
   const handleEdit = (produk: Produk) => {
     setIsEditing(true);
@@ -158,13 +207,33 @@ export default function ProdukPage() {
     <div className="">
       <h1 className="text-2xl font-bold mb-4">Produk Management</h1>
 
-      {error && <div className="text-red-500 mb-4">{error}</div>}
+      <div className="flex flex-row gap-5 items-center text-center mb-3">
+        <div className="flex items-center gap-4">
+          <span className="text-gray-600">Show</span>
 
-      <SearchBar
-        search={search}
-        setSearch={setSearch}
-        onAddNew={handleAddNew}
-      />
+          <select
+            value={itemsPerPage}
+            onChange={handleItemsPerPageChange}
+            className="border rounded px-2 py-1 focus:outline-none focus:ring focus:ring-green-300"
+          >
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+          </select>
+          <span className="text-gray-600">entries</span>
+        </div>
+
+        <SearchBar search={search} setSearch={setSearch} />
+
+        <button
+          onClick={handleAddNew}
+          className="flex items-center gap-2 bg-green-500 text-white px-3 my-1 py-1 rounded-lg hover:bg-green-600 transition"
+        >
+          <Plus size={20} />
+          Add New
+        </button>
+      </div>
 
       <table className="border-collapse border border-gray-200 mt-6">
         <thead>
@@ -208,6 +277,48 @@ export default function ProdukPage() {
         </tbody>
       </table>
 
+      <div className="flex justify-between items-center mt-4">
+        <div>
+          Showing {totalCount > 0 ? startIndex : 0} to {endIndex} of{" "}
+          {totalCount} entries
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className={`px-3 py-1 border rounded ${
+              currentPage === 1 ? "bg-gray-100" : "hover:bg-gray-100"
+            }`}
+          >
+            Previous
+          </button>
+
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            <button
+              key={page}
+              onClick={() => handlePageChange(page)}
+              className={`px-3 py-1 border rounded ${
+                currentPage === page
+                  ? "bg-blue-500 text-white"
+                  : "hover:bg-gray-100"
+              }`}
+            >
+              {page}
+            </button>
+          ))}
+
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className={`px-3 py-1 border rounded ${
+              currentPage === totalPages ? "bg-gray-100" : "hover:bg-gray-100"
+            }`}
+          >
+            Next
+          </button>
+        </div>
+      </div>
+
       {/* Modal Create/Update*/}
       {isModalOpen && (
         <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex items-center justify-center z-50">
@@ -248,11 +359,12 @@ export default function ProdukPage() {
                     <option value="" disabled>
                       Pilih Kategori
                     </option>
-                    {kategoriOptions.map((kategori) => (
-                      <option key={kategori.id} value={kategori.id}>
-                        {kategori.nama_kategori}
-                      </option>
-                    ))}
+                    {Array.isArray(kategoriOptions) &&
+                      kategoriOptions.map((kategori) => (
+                        <option key={kategori.id} value={kategori.id}>
+                          {kategori.nama_kategori}
+                        </option>
+                      ))}
                   </select>
                 </div>
                 <div className="w-full min-w-sm items-center">

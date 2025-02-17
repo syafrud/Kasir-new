@@ -188,7 +188,7 @@ export default function RootLayout({
                 }`}
                 style={{ zIndex: 10 }}
               >
-                © {new Date().getFullYear()} IndoKasir. All rights reserved.
+                © {new Date().getFullYear()} KasirPintar. All rights reserved.
               </div>
             </Providers>
           </div>
