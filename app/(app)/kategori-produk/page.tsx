@@ -8,13 +8,25 @@ import {
 } from "@/app/api/kategori/actions";
 import SearchBar from "@/components/search";
 import toast from "react-hot-toast";
+import { Plus } from "lucide-react";
 
 interface Kategori {
   id: number;
   nama_kategori: string;
 }
 
+interface PaginationData {
+  kategori: Kategori[];
+  totalCount: number;
+  totalPages: number;
+  currentPage: number;
+}
+
 export default function KategoriPage() {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
   const [kategori, setKategori] = useState<Kategori[]>([]);
   const [search, setSearch] = useState("");
   const [error, setError] = useState("");
@@ -31,7 +43,9 @@ export default function KategoriPage() {
   const fetchKategori = async () => {
     try {
       const res = await fetch(
-        `/api/kategori?search=${encodeURIComponent(search)}`
+        `/api/kategori?search=${encodeURIComponent(
+          search
+        )}&page=${currentPage}&limit=${itemsPerPage}`
       );
 
       if (!res.ok) {
@@ -40,8 +54,10 @@ export default function KategoriPage() {
         return;
       }
 
-      const data = await res.json();
-      setKategori(data);
+      const data: PaginationData = await res.json();
+      setKategori(data.kategori);
+      setTotalPages(data.totalPages);
+      setTotalCount(data.totalCount);
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);
@@ -53,8 +69,22 @@ export default function KategoriPage() {
 
   useEffect(() => {
     fetchKategori();
-  }, [search]);
+  }, [search, currentPage, itemsPerPage]);
 
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+  };
+
+  const handleItemsPerPageChange = (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    const newLimit = parseInt(e.target.value);
+    setItemsPerPage(newLimit);
+    setCurrentPage(1);
+  };
+
+  const startIndex = (currentPage - 1) * itemsPerPage + 1;
+  const endIndex = Math.min(startIndex + itemsPerPage - 1, totalCount);
   const handleEdit = (kategori: Kategori) => {
     setIsEditing(true);
     setEditKategori(kategori);
@@ -125,13 +155,33 @@ export default function KategoriPage() {
     <div className="">
       <h1 className="text-2xl font-bold mb-4">Kategori Produk</h1>
 
-      {error && <div className="text-red-500 mb-4">{error}</div>}
+      <div className="flex flex-row gap-5 items-center text-center mb-3">
+        <div className="flex items-center gap-4">
+          <span className="text-gray-600">Show</span>
 
-      <SearchBar
-        search={search}
-        setSearch={setSearch}
-        onAddNew={handleAddNew}
-      />
+          <select
+            value={itemsPerPage}
+            onChange={handleItemsPerPageChange}
+            className="border rounded px-2 py-1 focus:outline-none focus:ring focus:ring-green-300"
+          >
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+          </select>
+          <span className="text-gray-600">entries</span>
+        </div>
+
+        <SearchBar search={search} setSearch={setSearch} />
+
+        <button
+          onClick={handleAddNew}
+          className="flex items-center gap-2 bg-green-500 text-white px-3 my-1 py-1 rounded-lg hover:bg-green-600 transition"
+        >
+          <Plus size={20} />
+          Add New
+        </button>
+      </div>
 
       <table className="border-collapse border border-gray-200 mt-6">
         <thead>
@@ -164,6 +214,48 @@ export default function KategoriPage() {
           ))}
         </tbody>
       </table>
+
+      <div className="flex justify-between items-center mt-4">
+        <div>
+          Showing {totalCount > 0 ? startIndex : 0} to {endIndex} of{" "}
+          {totalCount} entries
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className={`px-3 py-1 border rounded ${
+              currentPage === 1 ? "bg-gray-100" : "hover:bg-gray-100"
+            }`}
+          >
+            Previous
+          </button>
+
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            <button
+              key={page}
+              onClick={() => handlePageChange(page)}
+              className={`px-3 py-1 border rounded ${
+                currentPage === page
+                  ? "bg-blue-500 text-white"
+                  : "hover:bg-gray-100"
+              }`}
+            >
+              {page}
+            </button>
+          ))}
+
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className={`px-3 py-1 border rounded ${
+              currentPage === totalPages ? "bg-gray-100" : "hover:bg-gray-100"
+            }`}
+          >
+            Next
+          </button>
+        </div>
+      </div>
 
       {/* Modal */}
       {isModalOpen && (
