@@ -250,6 +250,7 @@ export default function PelangganPage() {
           Showing {totalCount > 0 ? startIndex : 0} to {endIndex} of{" "}
           {totalCount} entries
         </div>
+
         <div className="flex gap-2">
           <button
             onClick={() => handlePageChange(currentPage - 1)}
