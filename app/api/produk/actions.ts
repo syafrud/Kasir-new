@@ -45,3 +45,43 @@ export async function deleteProduk(id: number) {
     where: { id },
   });
 }
+
+export async function adjustStock({
+  productId,
+  amount,
+  type,
+}: {
+  productId: number;
+  amount: number;
+  type: "in" | "out";
+}) {
+  const product = await prisma.produk.findUnique({
+    where: { id: productId },
+  });
+
+  if (!product) {
+    throw new Error("Product not found");
+  }
+
+  await prisma.$transaction(async (tx) => {
+    const newStock =
+      type === "in" ? product.stok + amount : product.stok - amount;
+
+    if (type === "out" && newStock < 0) {
+      throw new Error("Insufficient stock");
+    }
+
+    await tx.produk.update({
+      where: { id: productId },
+      data: { stok: newStock },
+    });
+
+    await tx.stok_management.create({
+      data: {
+        id_produk: productId,
+        stockIN: type === "in" ? amount : 0,
+        stockOut: type === "out" ? amount : 0,
+      },
+    });
+  });
+}

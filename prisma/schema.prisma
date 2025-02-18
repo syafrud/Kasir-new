@@ -58,6 +58,15 @@ model produk {
 
   detail_penjualan detail_penjualan[]
   kategori         kategori           @relation(fields: [id_kategori], references: [id], onDelete: Cascade)
+  stok_management  stok_management[]
+}
+
+model stok_management {
+  id        Int    @id @default(autoincrement())
+  id_produk Int
+  stockIN   Int
+  stockOut  Int
+  produk    produk @relation(fields: [id_produk], references: [id], onDelete: Cascade)
 }
 
 model kategori {

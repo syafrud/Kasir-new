@@ -5,10 +5,11 @@ import {
   createProduk,
   updateProduk,
   deleteProduk,
+  adjustStock,
 } from "@/app/api/produk/actions";
 import SearchBar from "@/components/search";
 import toast from "react-hot-toast";
-import { Plus } from "lucide-react";
+import { Plus, ArrowUp, ArrowDown } from "lucide-react";
 
 interface Produk {
   id: number;
@@ -35,6 +36,12 @@ interface PaginationData {
 }
 
 export default function ProdukPage() {
+  const [isStockModalOpen, setIsStockModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Produk | null>(null);
+  const [stockAdjustment, setStockAdjustment] = useState({
+    amount: 0,
+    type: "in" as "in" | "out",
+  });
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -54,6 +61,36 @@ export default function ProdukPage() {
     stok: "",
     barcode: "",
   });
+
+  const handleStockAdjust = (produk: Produk, type: "in" | "out") => {
+    setSelectedProduct(produk);
+    setStockAdjustment({ amount: 0, type });
+    setIsStockModalOpen(true);
+  };
+
+  const handleStockSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedProduct) return;
+
+    try {
+      await adjustStock({
+        productId: selectedProduct.id,
+        amount: stockAdjustment.amount,
+        type: stockAdjustment.type,
+      });
+
+      toast.success(
+        `Stock ${
+          stockAdjustment.type === "in" ? "added" : "reduced"
+        } successfully`
+      );
+      fetchProduk();
+    } catch (error) {
+      toast.error("Failed to adjust stock");
+    }
+
+    setIsStockModalOpen(false);
+  };
 
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [produkToDelete, setProdukToDelete] = useState<number | null>(null);
@@ -246,6 +283,7 @@ export default function ProdukPage() {
             <th className="border p-2 w-1/6">Stok</th>
             <th className="border p-2 w-1/6">barcode</th>
             <th className="border py-2 px-16 w-52">Actions</th>
+            <th className="border p-2 w-1/6">Stock Management</th>
           </tr>
         </thead>
         <tbody>
@@ -270,6 +308,22 @@ export default function ProdukPage() {
                   className="w-1/2 bg-red-500 text-white px-4 py-2 rounded"
                 >
                   Delete
+                </button>
+              </td>
+              <td className="border p-2 flex gap-2 justify-center">
+                <button
+                  onClick={() => handleStockAdjust(produk, "in")}
+                  className="bg-green-500 text-white p-2 rounded"
+                  title="Add Stock"
+                >
+                  <ArrowUp size={16} />
+                </button>
+                <button
+                  onClick={() => handleStockAdjust(produk, "out")}
+                  className="bg-red-500 text-white p-2 rounded"
+                  title="Reduce Stock"
+                >
+                  <ArrowDown size={16} />
                 </button>
               </td>
             </tr>
@@ -469,6 +523,53 @@ export default function ProdukPage() {
                 Batal
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Stock Adjustment Modal */}
+      {isStockModalOpen && selectedProduct && (
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <h2 className="text-xl font-bold mb-4">
+              {stockAdjustment.type === "in" ? "Add Stock" : "Reduce Stock"} -{" "}
+              {selectedProduct.nama_produk}
+            </h2>
+            <form onSubmit={handleStockSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Current Stock: {selectedProduct.stok_tersisa}
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={stockAdjustment.amount}
+                  onChange={(e) =>
+                    setStockAdjustment({
+                      ...stockAdjustment,
+                      amount: parseInt(e.target.value) || 0,
+                    })
+                  }
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                  required
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  className="bg-blue-500 text-white px-4 py-2 rounded"
+                >
+                  Confirm
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsStockModalOpen(false)}
+                  className="bg-gray-300 text-black px-4 py-2 rounded"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
