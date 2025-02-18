@@ -23,7 +23,7 @@ interface Penjualan {
 
 interface User {
   id: number;
-  nama_user: string;
+  username: string;
 }
 
 interface Pelanggan {
@@ -39,7 +39,18 @@ interface FormData {
   tanggal_penjualan: string;
 }
 
+interface PaginationData {
+  penjualan: Penjualan[];
+  totalCount: number;
+  totalPages: number;
+  currentPage: number;
+}
+
 export default function PenjualanPage() {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
   const router = useRouter();
   const [penjualan, setPenjualan] = useState<Penjualan[]>([]);
   const [userOptions, setUserOptions] = useState<User[]>([]);
@@ -75,17 +86,6 @@ export default function PenjualanPage() {
   };
 
   const formatTanggal = (date: Date) => {
-    const options: Intl.DateTimeFormatOptions = {
-      weekday: "short",
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      timeZone: "UTC",
-    };
-
     const dateObj = new Date(date);
 
     const time = dateObj
@@ -119,15 +119,19 @@ export default function PenjualanPage() {
       if (totalRange.maxTotal)
         searchParams.append("maxTotal", totalRange.maxTotal);
 
-      const res = await fetch(`/api/penjualan?${searchParams.toString()}`);
+      const res = await fetch(
+        `/api/penjualan?${searchParams.toString()}&page=${currentPage}&limit=${itemsPerPage}`
+      );
       if (!res.ok) {
         const errorText = await res.text();
         setError(errorText || "Failed to fetch penjualan");
         return;
       }
 
-      const data = await res.json();
-      setPenjualan(data);
+      const data: PaginationData = await res.json();
+      setPenjualan(data.penjualan);
+      setTotalPages(data.totalPages);
+      setTotalCount(data.totalCount);
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);
@@ -145,19 +149,51 @@ export default function PenjualanPage() {
     dateRange.endDate,
     totalRange.minTotal,
     totalRange.maxTotal,
+    currentPage,
+    itemsPerPage,
   ]);
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+  };
+
+  const handleItemsPerPageChange = (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    const newLimit = parseInt(e.target.value);
+    setItemsPerPage(newLimit);
+    setCurrentPage(1);
+  };
+
+  const startIndex = (currentPage - 1) * itemsPerPage + 1;
+  const endIndex = Math.min(startIndex + itemsPerPage - 1, totalCount);
 
   useEffect(() => {
     const fetchUsers = async () => {
-      const response = await fetch("/api/user");
-      const data = await response.json();
-      setUserOptions(data);
+      try {
+        const response = await fetch("/api/penjualan/users");
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log("Users Data:", data);
+        setUserOptions(data.users);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      }
     };
 
     const fetchPelanggan = async () => {
-      const response = await fetch("/api/pelanggan");
-      const data = await response.json();
-      setPelangganOptions(data);
+      try {
+        const response = await fetch("/api/penjualan/pelanggan");
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        setPelangganOptions(data.pelanggan);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      }
     };
 
     fetchUsers();
@@ -263,15 +299,33 @@ export default function PenjualanPage() {
 
       {error && <div className="text-red-500 mb-4">{error}</div>}
 
-      <SearchBar
-        search={search}
-        setSearch={setSearch}
-        dateRange={dateRange}
-        setDateRange={setDateRange}
-        totalRange={totalRange}
-        setTotalRange={setTotalRange}
-        onAddNew={handleAddNew}
-      />
+      <div className="flex flex-row gap-5 items-end text-center mb-3">
+        <div className="flex items-center gap-4 min-h-10">
+          <span className="text-gray-600">Show</span>
+
+          <select
+            value={itemsPerPage}
+            onChange={handleItemsPerPageChange}
+            className="border rounded px-2 py-1 focus:outline-none focus:ring focus:ring-green-300"
+          >
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+          </select>
+          <span className="text-gray-600">entries</span>
+        </div>
+
+        <SearchBar
+          search={search}
+          setSearch={setSearch}
+          dateRange={dateRange}
+          setDateRange={setDateRange}
+          totalRange={totalRange}
+          setTotalRange={setTotalRange}
+          onAddNew={handleAddNew}
+        />
+      </div>
 
       <table className="border-collapse border border-gray-200 mt-6">
         <thead>
@@ -325,6 +379,48 @@ export default function PenjualanPage() {
         </tbody>
       </table>
 
+      <div className="flex justify-between items-center mt-4">
+        <div>
+          Showing {totalCount > 0 ? startIndex : 0} to {endIndex} of{" "}
+          {totalCount} entries
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className={`px-3 py-1 border rounded ${
+              currentPage === 1 ? "bg-gray-100" : "hover:bg-gray-100"
+            }`}
+          >
+            Previous
+          </button>
+
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            <button
+              key={page}
+              onClick={() => handlePageChange(page)}
+              className={`px-3 py-1 border rounded ${
+                currentPage === page
+                  ? "bg-blue-500 text-white"
+                  : "hover:bg-gray-100"
+              }`}
+            >
+              {page}
+            </button>
+          ))}
+
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className={`px-3 py-1 border rounded ${
+              currentPage === totalPages ? "bg-gray-100" : "hover:bg-gray-100"
+            }`}
+          >
+            Next
+          </button>
+        </div>
+      </div>
+
       {/* Modal Create/Update*/}
       {isModalOpen && (
         <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex items-center justify-center z-50">
@@ -349,11 +445,12 @@ export default function PenjualanPage() {
                     required
                   >
                     <option value="">Pilih Petugas</option>
-                    {userOptions.map((user) => (
-                      <option key={user.id} value={user.id}>
-                        {user.nama_user}
-                      </option>
-                    ))}
+                    {Array.isArray(userOptions) &&
+                      userOptions.map((user) => (
+                        <option key={user.id} value={user.id}>
+                          {user.username}
+                        </option>
+                      ))}
                   </select>
                 </div>
                 <div className="w-full min-w-sm items-center gap-2">
@@ -368,11 +465,12 @@ export default function PenjualanPage() {
                     required
                   >
                     <option value="">Pilih Pelanggan</option>
-                    {pelangganOptions.map((pelanggan) => (
-                      <option key={pelanggan.id} value={pelanggan.id}>
-                        {pelanggan.nama}
-                      </option>
-                    ))}
+                    {Array.isArray(pelangganOptions) &&
+                      pelangganOptions.map((pelanggan) => (
+                        <option key={pelanggan.id} value={pelanggan.id}>
+                          {pelanggan.nama}
+                        </option>
+                      ))}
                   </select>
                 </div>
                 <div className="w-full min-w-sm items-center">

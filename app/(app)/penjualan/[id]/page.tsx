@@ -9,6 +9,7 @@ import {
 import SearchBar from "@/components/search";
 import toast from "react-hot-toast";
 import { useParams } from "next/navigation";
+import { Plus } from "lucide-react";
 
 interface Detail {
   id: number;
@@ -23,7 +24,8 @@ interface Detail {
 
 interface ProdukOption {
   id: number;
-  nama: string;
+  nama_produk: string;
+  harga_jual: number;
 }
 
 export default function DetailPage() {
@@ -73,9 +75,16 @@ export default function DetailPage() {
 
   useEffect(() => {
     const fetchProduk = async () => {
-      const response = await fetch("/api/produk");
-      const data = await response.json();
-      setDetailOptions(data);
+      try {
+        const response = await fetch("/api/produk");
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        setDetailOptions(data.produkWithUpdatedStock);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      }
     };
 
     fetchProduk();
@@ -144,8 +153,11 @@ export default function DetailPage() {
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const submitData = new FormData();
+
     Object.entries(formData).forEach(([key, value]) => {
-      submitData.append(key, value);
+      if (value !== undefined && value !== null) {
+        submitData.append(key, value.toString());
+      }
     });
 
     if (isEditing && editDetail) {
@@ -155,6 +167,7 @@ export default function DetailPage() {
       await createDetail(submitData);
       toast.success("Data berhasil ditambahkan");
     }
+
     fetchDetail();
     setIsModalOpen(false);
     setIsEditing(false);
@@ -180,11 +193,9 @@ export default function DetailPage() {
       }
     }
 
-    // Konversi qty dan harga_jual ke angka
     const qty = Number(updatedFormData.qty) || 0;
     const hargaJual = Number(updatedFormData.harga_jual) || 0;
 
-    // Hitung ulang total harga
     updatedFormData.total_harga = (qty * hargaJual).toString();
 
     setFormData(updatedFormData);
@@ -199,12 +210,17 @@ export default function DetailPage() {
       <h1 className="text-2xl font-bold mb-4">Detail Penjualan</h1>
 
       {error && <div className="text-red-500 mb-4">{error}</div>}
+      <div className="flex flex-row gap-5 items-center text-center mb-3">
+        <SearchBar search={search} setSearch={setSearch} />
 
-      <SearchBar
-        search={search}
-        setSearch={setSearch}
-        onAddNew={handleAddNew}
-      />
+        <button
+          onClick={handleAddNew}
+          className="flex items-center gap-2 bg-green-500 text-white px-3 my-1 py-1 rounded-lg hover:bg-green-600 transition"
+        >
+          <Plus size={20} />
+          Add
+        </button>
+      </div>
 
       <table className="border-collapse border border-gray-200 mt-6">
         <thead>
@@ -282,11 +298,12 @@ export default function DetailPage() {
                     <option value="" disabled>
                       Pilih Produk
                     </option>
-                    {produkOptions.map((produk) => (
-                      <option key={produk.id} value={produk.id}>
-                        {produk.nama_produk}
-                      </option>
-                    ))}
+                    {Array.isArray(produkOptions) &&
+                      produkOptions.map((produk) => (
+                        <option key={produk.id} value={produk.id}>
+                          {produk.nama_produk}
+                        </option>
+                      ))}
                   </select>
                 </div>
                 <div className="grid col-span-1 w-full min-w-sm items-center">

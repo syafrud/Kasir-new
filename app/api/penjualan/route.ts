@@ -6,18 +6,13 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "5");
+    const skip = (page - 1) * limit;
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
     const minTotal = searchParams.get("minTotal");
     const maxTotal = searchParams.get("maxTotal");
-
-    console.log("Search params:", {
-      search,
-      startDate,
-      endDate,
-      minTotal,
-      maxTotal,
-    });
 
     let whereClause: any = {};
 
@@ -58,6 +53,10 @@ export async function GET(request: NextRequest) {
 
     console.log("Where clause:", JSON.stringify(whereClause, null, 2));
 
+    const totalCount = await prisma.penjualan.count({
+      where: whereClause,
+    });
+
     const penjualan = await prisma.penjualan.findMany({
       where: whereClause,
       include: {
@@ -68,14 +67,20 @@ export async function GET(request: NextRequest) {
           select: { nama: true },
         },
       },
-      orderBy: {
-        id: "asc",
-      },
+      orderBy: { tanggal_penjualan: "desc" },
+      skip,
+      take: limit,
     });
 
-    console.log(`Found ${penjualan.length} results`);
-
-    return NextResponse.json(penjualan);
+    return NextResponse.json(
+      {
+        penjualan,
+        totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        currentPage: page,
+      },
+      { status: 200 }
+    );
   } catch (error) {
     console.error("API Error:", error);
     return NextResponse.json(
