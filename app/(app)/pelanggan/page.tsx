@@ -295,6 +295,7 @@ export default function PelangganPage() {
             <h2 className="text-xl font-bold mb-4">
               {isEditing ? "Edit Pelanggan" : "Add New Pelanggan"}
             </h2>
+
             <form onSubmit={handleFormSubmit}>
               <input
                 type="text"
