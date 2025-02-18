@@ -5,11 +5,10 @@ import {
   createProduk,
   updateProduk,
   deleteProduk,
-  adjustStock,
 } from "@/app/api/produk/actions";
 import SearchBar from "@/components/search";
 import toast from "react-hot-toast";
-import { Plus, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus } from "lucide-react";
 
 interface Produk {
   id: number;
@@ -19,7 +18,6 @@ interface Produk {
   harga_beli: string;
   harga_jual: string;
   stok: string;
-  stok_tersisa: string;
   barcode: string;
 }
 
@@ -29,19 +27,13 @@ interface Kategori {
 }
 
 interface PaginationData {
-  produkWithUpdatedStock: Produk[];
+  produk: Produk[];
   totalCount: number;
   totalPages: number;
   currentPage: number;
 }
 
 export default function ProdukPage() {
-  const [isStockModalOpen, setIsStockModalOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<Produk | null>(null);
-  const [stockAdjustment, setStockAdjustment] = useState({
-    amount: 0,
-    type: "in" as "in" | "out",
-  });
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -61,36 +53,8 @@ export default function ProdukPage() {
     stok: "",
     barcode: "",
   });
-
-  const handleStockAdjust = (produk: Produk, type: "in" | "out") => {
-    setSelectedProduct(produk);
-    setStockAdjustment({ amount: 0, type });
-    setIsStockModalOpen(true);
-  };
-
-  const handleStockSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedProduct) return;
-
-    try {
-      await adjustStock({
-        productId: selectedProduct.id,
-        amount: stockAdjustment.amount,
-        type: stockAdjustment.type,
-      });
-
-      toast.success(
-        `Stock ${
-          stockAdjustment.type === "in" ? "added" : "reduced"
-        } successfully`
-      );
-      fetchProduk();
-    } catch (error) {
-      toast.error("Failed to adjust stock");
-    }
-
-    setIsStockModalOpen(false);
-  };
+  const [stockAdjustment, setStockAdjustment] = useState(0);
+  const [adjustmentType, setAdjustmentType] = useState("+");
 
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [produkToDelete, setProdukToDelete] = useState<number | null>(null);
@@ -109,7 +73,7 @@ export default function ProdukPage() {
       }
 
       const data: PaginationData = await res.json();
-      setProduk(data.produkWithUpdatedStock);
+      setProduk(data.produk);
       setTotalPages(data.totalPages);
       setTotalCount(data.totalCount);
     } catch (error) {
@@ -174,6 +138,8 @@ export default function ProdukPage() {
       stok: produk.stok,
       barcode: produk.barcode,
     });
+    setStockAdjustment(0);
+    setAdjustmentType("+");
     setIsModalOpen(true);
   };
 
@@ -204,26 +170,57 @@ export default function ProdukPage() {
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const submitData = new FormData();
+
+    // For all fields except stok
     Object.entries(formData).forEach(([key, value]) => {
-      submitData.append(key, value);
+      if (key !== "stok" || !isEditing) {
+        submitData.append(key, value);
+      }
     });
 
+    // Handle stock adjustment if editing
     if (isEditing && editProduk) {
+      if (stockAdjustment !== 0) {
+        // Calculate new stock based on adjustment type and value
+        const currentStock = parseInt(editProduk.stok);
+        const adjustment =
+          adjustmentType === "+" ? stockAdjustment : -1 * stockAdjustment;
+        const newStock = currentStock + adjustment;
+        submitData.append("stok", newStock.toString());
+      } else {
+        // If no adjustment, use current stock
+        submitData.append("stok", editProduk.stok);
+      }
+
       await updateProduk(submitData, editProduk.id);
       toast.success("Data berhasil diperbarui");
     } else {
+      // For adding new product, use the stok value from formData
       await createProduk(submitData);
       toast.success("Data berhasil ditambahkan");
     }
+
     fetchProduk();
     setIsModalOpen(false);
     setIsEditing(false);
     setEditProduk(null);
+    setStockAdjustment(0);
+    setAdjustmentType("+");
   };
 
   const handleAddNew = () => {
     setIsEditing(false);
     setEditProduk(null);
+    setFormData({
+      nama_produk: "",
+      id_kategori: "",
+      harga_beli: "",
+      harga_jual: "",
+      stok: "",
+      barcode: "",
+    });
+    setStockAdjustment(0);
+    setAdjustmentType("+");
     setIsModalOpen(true);
   };
 
@@ -236,8 +233,30 @@ export default function ProdukPage() {
     });
   };
 
+  const handleAdjustmentTypeChange = (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    setAdjustmentType(e.target.value);
+  };
+
+  const handleStockAdjustmentInput = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    // Ensure we only get positive values in the input
+    const value = Math.abs(parseInt(e.target.value) || 0);
+    setStockAdjustment(value);
+  };
+
   const handleModalClose = () => {
     setIsModalOpen(false);
+  };
+
+  const calculateFinalStock = () => {
+    if (!editProduk) return 0;
+    const currentStock = parseInt(editProduk.stok || "0");
+    return adjustmentType === "+"
+      ? currentStock + stockAdjustment
+      : currentStock - stockAdjustment;
   };
 
   return (
@@ -283,7 +302,6 @@ export default function ProdukPage() {
             <th className="border p-2 w-1/6">Stok</th>
             <th className="border p-2 w-1/6">barcode</th>
             <th className="border py-2 px-16 w-52">Actions</th>
-            <th className="border p-2 w-1/6">Stock Management</th>
           </tr>
         </thead>
         <tbody>
@@ -294,37 +312,23 @@ export default function ProdukPage() {
               <td className="border p-2">{produk.kategori?.nama_kategori}</td>
               <td className="border p-2 text-center">{produk.harga_beli}</td>
               <td className="border p-2">{produk.harga_jual}</td>
-              <td className="border p-2 text-right">{produk.stok_tersisa}</td>
+              <td className="border p-2 text-right">{produk.stok}</td>
               <td className="border p-2 text-center">{produk.barcode}</td>
-              <td className="flex flex-row border gap-3 p-3">
-                <button
-                  onClick={() => handleEdit(produk)}
-                  className="w-1/2 bg-blue-500 text-white px-4 py-2 rounded"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => openConfirmModal(produk.id)}
-                  className="w-1/2 bg-red-500 text-white px-4 py-2 rounded"
-                >
-                  Delete
-                </button>
-              </td>
-              <td className="border p-2 flex gap-2 justify-center">
-                <button
-                  onClick={() => handleStockAdjust(produk, "in")}
-                  className="bg-green-500 text-white p-2 rounded"
-                  title="Add Stock"
-                >
-                  <ArrowUp size={16} />
-                </button>
-                <button
-                  onClick={() => handleStockAdjust(produk, "out")}
-                  className="bg-red-500 text-white p-2 rounded"
-                  title="Reduce Stock"
-                >
-                  <ArrowDown size={16} />
-                </button>
+              <td className="border p-2 text-center">
+                <div className="flex justify-center gap-2">
+                  <button
+                    onClick={() => handleEdit(produk)}
+                    className="bg-blue-500 text-white px-3 py-1 rounded"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => openConfirmModal(produk.id)}
+                    className="bg-red-500 text-white px-3 py-1 rounded"
+                  >
+                    Delete
+                  </button>
+                </div>
               </td>
             </tr>
           ))}
@@ -454,20 +458,52 @@ export default function ProdukPage() {
                     required
                   />
                 </div>
-                <div className="grid col-span-1 w-full min-w-sm items-center">
-                  <label className="block text-base font-medium text-gray-700">
-                    Stok Barang
-                  </label>
-                  <input
-                    type="number"
-                    name="stok"
-                    placeholder="Stok Barang"
-                    className="border p-2 rounded w-full mt-2"
-                    value={formData.stok}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
+
+                {isEditing ? (
+                  <div className="grid col-span-1 w-full min-w-sm items-center">
+                    <label className="block text-base font-medium text-gray-700">
+                      Adjustment
+                    </label>
+                    <div className="flex items-center mt-2">
+                      <select
+                        value={adjustmentType}
+                        onChange={handleAdjustmentTypeChange}
+                        className="border-r-0 border p-2 rounded-l"
+                      >
+                        <option value="+">+</option>
+                        <option value="-">-</option>
+                      </select>
+                      <input
+                        type="number"
+                        className="border p-2 rounded-r w-full"
+                        value={stockAdjustment}
+                        onChange={handleStockAdjustmentInput}
+                        min="0"
+                      />
+                    </div>
+                    <div className="text-sm text-gray-500 mt-1">
+                      Stok Awal: {editProduk?.stok}, Adjustment:{" "}
+                      {adjustmentType + stockAdjustment}, Stok Akhir:{" "}
+                      {calculateFinalStock()}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid col-span-1 w-full min-w-sm items-center">
+                    <label className="block text-base font-medium text-gray-700">
+                      Stok Barang
+                    </label>
+                    <input
+                      type="number"
+                      name="stok"
+                      placeholder="Stok Barang"
+                      className="border p-2 rounded w-full mt-2"
+                      value={formData.stok}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                )}
+
                 <div className="grid col-span-1 w-full min-w-sm items-center">
                   <label className="block text-base font-medium text-gray-700">
                     Barcode
@@ -523,53 +559,6 @@ export default function ProdukPage() {
                 Batal
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Stock Adjustment Modal */}
-      {isStockModalOpen && selectedProduct && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg">
-            <h2 className="text-xl font-bold mb-4">
-              {stockAdjustment.type === "in" ? "Add Stock" : "Reduce Stock"} -{" "}
-              {selectedProduct.nama_produk}
-            </h2>
-            <form onSubmit={handleStockSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Current Stock: {selectedProduct.stok_tersisa}
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={stockAdjustment.amount}
-                  onChange={(e) =>
-                    setStockAdjustment({
-                      ...stockAdjustment,
-                      amount: parseInt(e.target.value) || 0,
-                    })
-                  }
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                  required
-                />
-              </div>
-              <div className="flex gap-2">
-                <button
-                  type="submit"
-                  className="bg-blue-500 text-white px-4 py-2 rounded"
-                >
-                  Confirm
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsStockModalOpen(false)}
-                  className="bg-gray-300 text-black px-4 py-2 rounded"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       )}

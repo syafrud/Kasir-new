@@ -42,20 +42,9 @@ export async function GET(request: NextRequest) {
       take: limit,
     });
 
-    const produkWithUpdatedStock = produk.map((item) => {
-      const totalQty = item.detail_penjualan.reduce(
-        (sum, dp) => sum + dp.qty,
-        0
-      );
-      return {
-        ...item,
-        stok_tersisa: Math.max(item.stok - totalQty, 0), // Pastikan tidak negatif
-      };
-    });
-
     return NextResponse.json(
       {
-        produkWithUpdatedStock,
+        produk,
         totalCount,
         totalPages: Math.ceil(totalCount / limit),
         currentPage: page,

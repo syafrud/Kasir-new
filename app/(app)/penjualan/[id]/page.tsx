@@ -81,7 +81,7 @@ export default function DetailPage() {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
-        setDetailOptions(data.produkWithUpdatedStock);
+        setDetailOptions(data.produk);
       } catch (error) {
         console.error("Error fetching users:", error);
       }
