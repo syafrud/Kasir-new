@@ -189,7 +189,7 @@ export default function DetailPage() {
     if (name === "id_produk") {
       const selectedProduk = produkOptions.find((p) => p.id === Number(value));
       if (selectedProduk) {
-        updatedFormData.harga_jual = selectedProduk.harga_jual;
+        updatedFormData.harga_jual = selectedProduk.harga_jual.toString();
       }
     }
 
