@@ -88,9 +88,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
         <button
           onClick={onAddNew}
           className="bg-green-500 text-white px-4 py-2 rounded h-3/4"
-        >
-          Add New
-        </button>
+        ></button>
       </div>
     </div>
   );

@@ -5,6 +5,7 @@ import {
   createProduk,
   updateProduk,
   deleteProduk,
+  adjustStock,
 } from "@/app/api/produk/actions";
 import SearchBar from "@/components/search";
 import toast from "react-hot-toast";
@@ -171,41 +172,50 @@ export default function ProdukPage() {
     e.preventDefault();
     const submitData = new FormData();
 
-    // For all fields except stok
     Object.entries(formData).forEach(([key, value]) => {
       if (key !== "stok" || !isEditing) {
         submitData.append(key, value);
       }
     });
 
-    // Handle stock adjustment if editing
-    if (isEditing && editProduk) {
-      if (stockAdjustment !== 0) {
-        // Calculate new stock based on adjustment type and value
-        const currentStock = parseInt(editProduk.stok);
-        const adjustment =
-          adjustmentType === "+" ? stockAdjustment : -1 * stockAdjustment;
-        const newStock = currentStock + adjustment;
-        submitData.append("stok", newStock.toString());
+    try {
+      if (isEditing && editProduk) {
+        if (stockAdjustment !== 0) {
+          const currentStock = parseInt(editProduk.stok);
+          const adjustment =
+            adjustmentType === "+" ? stockAdjustment : -1 * stockAdjustment;
+          const newStock = currentStock + adjustment;
+          submitData.append("stok", newStock.toString());
+
+          await adjustStock({
+            productId: editProduk.id,
+            amount: stockAdjustment,
+            type: adjustmentType === "+" ? "in" : "out",
+          });
+
+          toast.success("Data dan stok berhasil diperbarui");
+        } else {
+          submitData.append("stok", editProduk.stok);
+          await updateProduk(submitData, editProduk.id);
+          toast.success("Data berhasil diperbarui");
+        }
       } else {
-        // If no adjustment, use current stock
-        submitData.append("stok", editProduk.stok);
+        await createProduk(submitData);
+        toast.success("Data berhasil ditambahkan");
       }
 
-      await updateProduk(submitData, editProduk.id);
-      toast.success("Data berhasil diperbarui");
-    } else {
-      // For adding new product, use the stok value from formData
-      await createProduk(submitData);
-      toast.success("Data berhasil ditambahkan");
+      fetchProduk();
+      setIsModalOpen(false);
+      setIsEditing(false);
+      setEditProduk(null);
+      setStockAdjustment(0);
+      setAdjustmentType("+");
+    } catch (error) {
+      toast.error(
+        "Terjadi kesalahan: " +
+          (error instanceof Error ? error.message : "Unknown error")
+      );
     }
-
-    fetchProduk();
-    setIsModalOpen(false);
-    setIsEditing(false);
-    setEditProduk(null);
-    setStockAdjustment(0);
-    setAdjustmentType("+");
   };
 
   const handleAddNew = () => {
@@ -284,10 +294,9 @@ export default function ProdukPage() {
 
         <button
           onClick={handleAddNew}
-          className="flex items-center gap-2 bg-green-500 text-white px-3 my-1 py-1 rounded-lg hover:bg-green-600 transition"
+          className="flex items-center gap-2 bg-green-500 text-white px-3 my-1 py-1 rounded-lg hover:bg-green-600 transition h-8"
         >
           <Plus size={20} />
-          Add New
         </button>
       </div>
 

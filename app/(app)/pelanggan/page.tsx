@@ -196,10 +196,9 @@ export default function PelangganPage() {
 
         <button
           onClick={handleAddNew}
-          className="flex items-center gap-2 bg-green-500 text-white px-3 my-1 py-1 rounded-lg hover:bg-green-600 transition"
+          className="flex items-center gap-2 bg-green-500 text-white px-3 py-1 rounded-lg hover:bg-green-600 transition h-8"
         >
           <Plus size={20} />
-          Add New
         </button>
       </div>
 
