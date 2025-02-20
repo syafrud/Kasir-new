@@ -6,6 +6,15 @@ import { Prisma } from "@prisma/client";
 export async function createProduk(formdata: FormData) {
   const hargaBeli = formdata.get("harga_beli") as string;
   const hargaJual = formdata.get("harga_jual") as string;
+  const barcode = formdata.get("barcode") as string;
+
+  const existingBarcode = await prisma.produk.findUnique({
+    where: { barcode },
+  });
+
+  if (existingBarcode) {
+    throw new Error("Barcode already taken");
+  }
 
   if (hargaBeli && hargaJual) {
     await prisma.produk.create({

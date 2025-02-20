@@ -11,6 +11,7 @@ export async function createPelanggan(formdata: FormData) {
   if (existingUser) {
     throw new Error("Username already taken");
   }
+
   await prisma.pelanggan.create({
     data: {
       nama,

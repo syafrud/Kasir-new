@@ -10,6 +10,7 @@ import {
 import SearchBar from "@/components/search";
 import toast from "react-hot-toast";
 import { Plus } from "lucide-react";
+import RupiahInput from "@/components/RupiahInput";
 
 interface Produk {
   id: number;
@@ -170,15 +171,27 @@ export default function ProdukPage() {
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const submitData = new FormData();
-
-    Object.entries(formData).forEach(([key, value]) => {
-      if (key !== "stok" || !isEditing) {
-        submitData.append(key, value);
-      }
-    });
 
     try {
+      const submitData = new FormData();
+      console.log("Current form data:", formData);
+      if (
+        !formData.nama_produk ||
+        !formData.id_kategori ||
+        !formData.harga_beli ||
+        !formData.harga_jual ||
+        !formData.barcode
+      ) {
+        toast.error("Semua field harus diisi");
+        return;
+      }
+
+      submitData.append("nama_produk", formData.nama_produk);
+      submitData.append("id_kategori", formData.id_kategori);
+      submitData.append("harga_beli", formData.harga_beli);
+      submitData.append("harga_jual", formData.harga_jual);
+      submitData.append("barcode", formData.barcode);
+
       if (isEditing && editProduk) {
         if (stockAdjustment !== 0) {
           const currentStock = parseInt(editProduk.stok);
@@ -192,14 +205,23 @@ export default function ProdukPage() {
             amount: stockAdjustment,
             type: adjustmentType === "+" ? "in" : "out",
           });
-
-          toast.success("Data dan stok berhasil diperbarui");
         } else {
           submitData.append("stok", editProduk.stok);
-          await updateProduk(submitData, editProduk.id);
-          toast.success("Data berhasil diperbarui");
         }
+
+        for (let [key, value] of submitData.entries()) {
+          console.log(`${key}: ${value}`);
+        }
+
+        await updateProduk(submitData, editProduk.id);
+        toast.success("Data berhasil diperbarui");
       } else {
+        submitData.append("stok", formData.stok);
+
+        for (let [key, value] of submitData.entries()) {
+          console.log(`${key}: ${value}`);
+        }
+
         await createProduk(submitData);
         toast.success("Data berhasil ditambahkan");
       }
@@ -211,6 +233,7 @@ export default function ProdukPage() {
       setStockAdjustment(0);
       setAdjustmentType("+");
     } catch (error) {
+      console.error("Error submitting form:", error);
       toast.error(
         "Terjadi kesalahan: " +
           (error instanceof Error ? error.message : "Unknown error")
@@ -319,8 +342,21 @@ export default function ProdukPage() {
               <td className="border p-2 text-center">{index + 1}</td>
               <td className="border p-2">{produk.nama_produk}</td>
               <td className="border p-2">{produk.kategori?.nama_kategori}</td>
-              <td className="border p-2 text-center">{produk.harga_beli}</td>
-              <td className="border p-2">{produk.harga_jual}</td>
+              <td className="border p-2 text-right">
+                {new Intl.NumberFormat("id-ID", {
+                  style: "currency",
+                  currency: "IDR",
+                  minimumFractionDigits: 2,
+                }).format(Number(produk.harga_beli))}
+              </td>
+              <td className="border p-2 text-right">
+                {new Intl.NumberFormat("id-ID", {
+                  style: "currency",
+                  currency: "IDR",
+                  minimumFractionDigits: 2,
+                }).format(Number(produk.harga_jual))}
+              </td>
+
               <td className="border p-2 text-right">{produk.stok}</td>
               <td className="border p-2 text-center">{produk.barcode}</td>
               <td className="border p-2 text-center">
@@ -438,12 +474,10 @@ export default function ProdukPage() {
                   <label className="block text-base font-medium text-gray-700">
                     Harga Beli
                   </label>
-                  <input
-                    type="number"
+                  <RupiahInput
                     name="harga_beli"
                     placeholder="Harga Beli"
                     className="border p-2 rounded w-full mt-2"
-                    step="0.01"
                     value={formData.harga_beli}
                     onChange={handleInputChange}
                     required
@@ -456,12 +490,10 @@ export default function ProdukPage() {
                   <label className="block text-base font-medium text-gray-700">
                     Harga Jual
                   </label>
-                  <input
-                    type="number"
+                  <RupiahInput
                     name="harga_jual"
                     placeholder="Harga Jual"
                     className="border p-2 rounded w-full mt-2"
-                    step="0.01"
                     value={formData.harga_jual}
                     onChange={handleInputChange}
                     required
