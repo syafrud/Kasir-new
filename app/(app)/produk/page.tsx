@@ -233,11 +233,7 @@ export default function ProdukPage() {
       setStockAdjustment(0);
       setAdjustmentType("+");
     } catch (error) {
-      console.error("Error submitting form:", error);
-      toast.error(
-        "Terjadi kesalahan: " +
-          (error instanceof Error ? error.message : "Unknown error")
-      );
+      toast.error(error instanceof Error ? error.message : "Unknown error");
     }
   };
 

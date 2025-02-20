@@ -33,6 +33,18 @@ export async function createProduk(formdata: FormData) {
 export async function updateProduk(formdata: FormData, id: number) {
   const hargaBeli = formdata.get("harga_beli") as string;
   const hargaJual = formdata.get("harga_jual") as string;
+  const barcode = formdata.get("barcode") as string;
+
+  const existingBarcode = await prisma.produk.findFirst({
+    where: {
+      barcode,
+      id: { not: id },
+    },
+  });
+
+  if (existingBarcode) {
+    throw new Error("Barcode already taken");
+  }
 
   if (hargaBeli && hargaJual) {
     await prisma.produk.update({
@@ -43,7 +55,7 @@ export async function updateProduk(formdata: FormData, id: number) {
         harga_beli: new Prisma.Decimal(hargaBeli),
         harga_jual: new Prisma.Decimal(hargaJual),
         stok: Number(formdata.get("stok")),
-        barcode: formdata.get("barcode") as string,
+        barcode,
       },
     });
   }
