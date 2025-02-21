@@ -51,27 +51,40 @@ export default function DetailPage() {
 
   const fetchDetail = async () => {
     try {
-      const res = await fetch(`/api/detail/${id}`);
-      if (!res.ok) {
-        const errorText = await res.text();
-        setError(errorText || "Failed to fetch detail");
-        return;
+      const params = new URLSearchParams();
+      if (search) {
+        params.append("search", search);
       }
 
-      const data = await res.json();
-      setDetail(data);
-    } catch (error) {
-      if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError("An unexpected error occurred");
+      const res = await fetch(`/api/detail/${id}?${params}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch details");
       }
+
+      const text = await res.text();
+      const data = text ? JSON.parse(text) : [];
+      setDetail(data);
+      setError("");
+    } catch (error) {
+      console.error("Error:", error);
+      setError("Failed to fetch details");
+      setDetail([]);
     }
   };
 
   useEffect(() => {
+    if (!id) {
+      setError("No ID provided");
+      return;
+    }
     fetchDetail();
-  }, [search]);
+  }, [id, search]);
 
   useEffect(() => {
     const fetchProduk = async () => {
@@ -282,7 +295,6 @@ export default function DetailPage() {
                     value={id}
                     required
                     readOnly
-                    // hidden
                   />
 
                   <label className="block text-base font-medium text-gray-700">

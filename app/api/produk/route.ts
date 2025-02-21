@@ -22,9 +22,18 @@ export async function GET(request: NextRequest) {
     const produk = await prisma.produk.findMany({
       where: search
         ? {
-            nama_produk: {
-              contains: search.trim().toLowerCase(),
-            },
+            OR: [
+              {
+                nama_produk: {
+                  contains: search.trim().toLowerCase(),
+                },
+              },
+              {
+                barcode: {
+                  contains: search.trim(),
+                },
+              },
+            ],
           }
         : undefined,
       include: {

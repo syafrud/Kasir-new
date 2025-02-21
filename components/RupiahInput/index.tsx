@@ -48,20 +48,18 @@ const RupiahInput: React.FC<RupiahInputProps> = ({
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const rawValue = parseRupiahValue(e.target.value);
 
-    // Update display value
     if (rawValue !== "") {
       setDisplayValue(formatToRupiah(Number(rawValue)));
     } else {
       setDisplayValue("");
     }
 
-    // Create a new event with the raw numeric value
     const newEvent = {
       ...e,
       target: {
         ...e.target,
         name: name,
-        value: rawValue, // Pass the raw numeric value
+        value: rawValue,
       },
     } as ChangeEvent<HTMLInputElement>;
 

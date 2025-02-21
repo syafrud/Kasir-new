@@ -15,7 +15,7 @@ CREATE TABLE `detail_penjualan` (
 CREATE TABLE `penjualan` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `id_user` INTEGER NOT NULL,
-    `id_pelanggan` INTEGER NOT NULL,
+    `id_pelanggan` INTEGER NULL,
     `diskon` DECIMAL(65, 30) NOT NULL,
     `total_harga` DECIMAL(65, 30) NOT NULL,
     `tanggal_penjualan` DATETIME(3) NOT NULL,
@@ -35,6 +35,7 @@ CREATE TABLE `produk` (
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
 
+    UNIQUE INDEX `produk_barcode_key`(`barcode`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -97,7 +98,7 @@ ALTER TABLE `detail_penjualan` ADD CONSTRAINT `detail_penjualan_id_produk_fkey` 
 ALTER TABLE `penjualan` ADD CONSTRAINT `penjualan_id_user_fkey` FOREIGN KEY (`id_user`) REFERENCES `users`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `penjualan` ADD CONSTRAINT `penjualan_id_pelanggan_fkey` FOREIGN KEY (`id_pelanggan`) REFERENCES `pelanggan`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `penjualan` ADD CONSTRAINT `penjualan_id_pelanggan_fkey` FOREIGN KEY (`id_pelanggan`) REFERENCES `pelanggan`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `produk` ADD CONSTRAINT `produk_id_kategori_fkey` FOREIGN KEY (`id_kategori`) REFERENCES `kategori`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

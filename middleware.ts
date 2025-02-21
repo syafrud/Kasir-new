@@ -29,7 +29,7 @@ export async function middleware(req: NextRequest) {
 
   if (token && roleBasedPaths[path]) {
     const allowedRoles = roleBasedPaths[path];
-    const userRole = (token as { role: string }).role; // Type assertion
+    const userRole = (token as { role: string }).role;
     if (!allowedRoles.includes(userRole)) {
       return NextResponse.redirect(new URL("/", req.url));
     }

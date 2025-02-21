@@ -9,6 +9,7 @@ import {
 import toast from "react-hot-toast";
 import SearchBar from "@/components/search/penjualan";
 import { useRouter } from "next/navigation";
+import SearchBarProduk from "@/components/search/produkSearch";
 
 interface Penjualan {
   id: number;
@@ -46,6 +47,13 @@ interface PaginationData {
   currentPage: number;
 }
 
+interface Produk {
+  id: number;
+  nama_produk: string;
+  harga_jual: number;
+  stok: number;
+}
+
 export default function PenjualanPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -55,6 +63,11 @@ export default function PenjualanPage() {
   const [penjualan, setPenjualan] = useState<Penjualan[]>([]);
   const [userOptions, setUserOptions] = useState<User[]>([]);
   const [pelangganOptions, setPelangganOptions] = useState<Pelanggan[]>([]);
+  const [isPelanggan, setIsPelanggan] = useState(false);
+  const [produkOptions, setProdukOptions] = useState<Produk[]>([]);
+  const [selectedProduk, setSelectedProduk] = useState<
+    { id: number; quantity: number }[]
+  >([]);
   const [search, setSearch] = useState("");
   const [dateRange, setDateRange] = useState({
     startDate: "",
@@ -153,6 +166,54 @@ export default function PenjualanPage() {
     itemsPerPage,
   ]);
 
+  useEffect(() => {
+    const fetchProduk = async () => {
+      try {
+        const response = await fetch("/api/produk");
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        setProdukOptions(data.produk);
+        console.log(data);
+      } catch (error) {
+        console.error("Error fetching produk:", error);
+      }
+    };
+
+    fetchProduk();
+  }, []);
+
+  useEffect(() => {
+    const total = selectedProduk.reduce((acc, item) => {
+      const produk = produkOptions.find((b) => b.id === item.id);
+      return acc + (produk ? produk.harga_jual * item.quantity : 0);
+    }, 0);
+    setFormData((prev) => ({ ...prev, total_harga: total.toString() }));
+  }, [selectedProduk, produkOptions]);
+
+  useEffect(() => {
+    if (!isPelanggan) {
+      setFormData((prev) => ({ ...prev, id_pelanggan: "" }));
+    }
+  }, [isPelanggan]);
+
+  useEffect(() => {
+    const totalHargaSebelumDiskon = selectedProduk.reduce((total, item) => {
+      const produk = produkOptions.find((p) => p.id === item.id);
+      return total + (produk ? produk.harga_jual * item.quantity : 0);
+    }, 0);
+
+    const diskon = isPelanggan ? totalHargaSebelumDiskon * 0.1 : 0;
+    const totalSetelahDiskon = totalHargaSebelumDiskon - diskon;
+
+    setFormData((prev) => ({
+      ...prev,
+      total_harga: totalSetelahDiskon.toFixed(2),
+      diskon: diskon.toFixed(2),
+    }));
+  }, [selectedProduk, isPelanggan]);
+
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
   };
@@ -243,12 +304,29 @@ export default function PenjualanPage() {
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const submitData = new FormData();
-    Object.entries(formData).forEach(([key, value]) => {
-      submitData.append(key, value);
-    });
+
+    if (isPelanggan && !formData.id_pelanggan) {
+      toast.error("Silakan pilih pelanggan sebelum melanjutkan.");
+      return;
+    }
 
     try {
+      const submitData = new FormData();
+
+      submitData.append("id_user", formData.id_user.toString());
+      submitData.append(
+        "id_pelanggan",
+        isPelanggan ? formData.id_pelanggan.toString() : ""
+      );
+      submitData.append("diskon", formData.diskon.replace(/[.,]/g, ""));
+      submitData.append(
+        "total_harga",
+        formData.total_harga.replace(/[.,]/g, "")
+      );
+      submitData.append("tanggal_penjualan", formData.tanggal_penjualan);
+
+      submitData.append("selectedProduk", JSON.stringify(selectedProduk));
+
       if (isEditing && editPenjualan) {
         await updatePenjualan(submitData, editPenjualan.id);
         toast.success("Data berhasil diperbarui");
@@ -256,16 +334,18 @@ export default function PenjualanPage() {
         await createPenjualan(submitData);
         toast.success("Data berhasil ditambahkan");
       }
+
       fetchPenjualan();
       setIsModalOpen(false);
       setIsEditing(false);
       setEditPenjualan(null);
+      setSelectedProduk([]);
     } catch (error) {
-      if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError("Terjadi kesalahan saat menyimpan data.");
-      }
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Terjadi kesalahan saat menyimpan data."
+      );
     }
   };
 
@@ -296,8 +376,6 @@ export default function PenjualanPage() {
   return (
     <div className="">
       <h1 className="text-2xl font-bold mb-4">Penjualan Management</h1>
-
-      {error && <div className="text-red-500 mb-4">{error}</div>}
 
       <div className="flex flex-row gap-5 items-end text-center mb-3">
         <div className="flex items-center gap-4 min-h-10">
@@ -423,97 +501,219 @@ export default function PenjualanPage() {
 
       {/* Modal Create/Update*/}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg">
-            <h2 className="text-xl font-bold mb-4">
-              {isEditing ? "Edit Penjualan" : "Add New Penjualan"}
-            </h2>
-            <form
-              onSubmit={handleFormSubmit}
-              className="w-full sm:min-w-[400px] grid grid-cols-2 gap-3"
-            >
-              <div className="grid col-span-1 w-full min-w-sm">
-                <div className="w-full min-w-sm items-center gap-2">
-                  <label className="block text-base font-medium text-gray-700">
-                    Nama Petugas
-                  </label>
-                  <select
-                    name="id_user"
-                    className="border p-2 rounded w-full mt-2"
-                    value={formData.id_user}
-                    onChange={handleInputChange}
-                    required
-                  >
-                    <option value="">Pilih Petugas</option>
-                    {Array.isArray(userOptions) &&
-                      userOptions.map((user) => (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-lg w-full max-w-lg animate-fadeIn max-h-[90vh] flex flex-col">
+            <div className="flex justify-between items-center border-b p-4 sticky top-0 bg-white rounded-t-xl">
+              <h2 className="text-xl font-semibold">
+                {isEditing ? "Edit Penjualan" : "Tambah Penjualan"}
+              </h2>
+              <button
+                onClick={handleModalClose}
+                className="text-gray-500 hover:text-red-500 transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Scrollable Form Content */}
+            <div className="overflow-y-auto p-4 flex-1">
+              <form onSubmit={handleFormSubmit} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="col-span-2 md:col-span-1">
+                    <label className="block text-gray-700 font-medium text-sm">
+                      Nama Petugas
+                    </label>
+                    <select
+                      name="id_user"
+                      className="border rounded-lg p-2 w-full mt-1"
+                      value={formData.id_user}
+                      onChange={handleInputChange}
+                      required
+                    >
+                      <option value="" disabled>
+                        Pilih Petugas
+                      </option>
+                      {userOptions.map((user) => (
                         <option key={user.id} value={user.id}>
                           {user.username}
                         </option>
                       ))}
-                  </select>
+                    </select>
+                  </div>
+
+                  <div className="col-span-2 md:col-span-1">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Apakah pelanggan?
+                    </label>
+                    <select
+                      name="isPelanggan"
+                      value={isPelanggan ? "yes" : "no"}
+                      onChange={(e) => setIsPelanggan(e.target.value === "yes")}
+                      className="border rounded-lg p-2 w-full mt-1"
+                    >
+                      <option value="no">Tidak</option>
+                      <option value="yes">Ya</option>
+                    </select>
+                  </div>
                 </div>
-                <div className="w-full min-w-sm items-center gap-2">
-                  <label className="block text-base font-medium text-gray-700">
-                    Nama Pelanggan
-                  </label>
-                  <select
-                    name="id_pelanggan"
-                    className="border p-2 rounded w-full mt-2"
-                    value={formData.id_pelanggan}
-                    onChange={handleInputChange}
-                    required
-                  >
-                    <option value="">Pilih Pelanggan</option>
-                    {Array.isArray(pelangganOptions) &&
-                      pelangganOptions.map((pelanggan) => (
+
+                {isPelanggan && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Pilih Pelanggan
+                    </label>
+                    <select
+                      name="id_pelanggan"
+                      value={formData.id_pelanggan}
+                      onChange={handleInputChange}
+                      className="border rounded-lg p-2 w-full mt-1"
+                    >
+                      <option value="" disabled>
+                        Pilih Pelanggan
+                      </option>
+                      {pelangganOptions.map((pelanggan) => (
                         <option key={pelanggan.id} value={pelanggan.id}>
                           {pelanggan.nama}
                         </option>
                       ))}
-                  </select>
-                </div>
-                <div className="w-full min-w-sm items-center">
-                  <label className="block text-base font-medium text-gray-700">
-                    Diskon
-                  </label>
-                  <input
-                    type="number"
-                    name="diskon"
-                    placeholder="Masukkan diskon"
-                    className="border p-2 rounded w-full mt-2"
-                    value={formData.diskon}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-              </div>
+                    </select>
+                  </div>
+                )}
 
-              <div className="grid col-span-1 grid-cols-1 w-full min-w-sm">
-                <div className="grid col-span-1 w-full min-w-sm items-center">
-                  <label className="block text-base font-medium text-gray-700">
-                    Total Harga
-                  </label>
-                  <input
-                    type="number"
-                    name="total_harga"
-                    placeholder="Total harga"
-                    className="border p-2 rounded w-full mt-2"
-                    min="0"
-                    value={formData.total_harga}
-                    onChange={handleInputChange}
-                    required
-                  />
+                {/* Produk Selection */}
+                <SearchBarProduk
+                  onSelect={(produk) => {
+                    setSelectedProduk((prev) => {
+                      const existingProduct = prev.find(
+                        (item) => item.id === produk.id
+                      );
+
+                      if (existingProduct) {
+                        return prev.map((item) =>
+                          item.id === produk.id
+                            ? { ...item, quantity: item.quantity + 1 }
+                            : item
+                        );
+                      } else {
+                        return [...prev, { id: produk.id, quantity: 1 }];
+                      }
+                    });
+                  }}
+                />
+
+                {/* Selected Products List */}
+                <div className="mt-2">
+                  {selectedProduk.map((item, index) => {
+                    const produk = produkOptions.find((p) => p.id === item.id);
+                    return (
+                      <div
+                        key={index}
+                        className="flex justify-between items-center p-2 border rounded-lg mt-1"
+                      >
+                        <span>
+                          {produk?.nama_produk} - Rp{produk?.harga_jual}
+                        </span>
+                        <div>
+                          <input
+                            type="number"
+                            min="1"
+                            value={item.quantity}
+                            onChange={(e) => {
+                              const newQuantity = parseInt(e.target.value) || 0;
+                              const updatedProduk = selectedProduk.map((prod) =>
+                                prod.id === item.id
+                                  ? { ...prod, quantity: newQuantity }
+                                  : prod
+                              );
+                              setSelectedProduk(updatedProduk);
+                            }}
+                            className="w-16 border rounded p-1 text-center"
+                          />
+                          <button
+                            className="ml-2 text-red-500 hover:text-red-700"
+                            onClick={() =>
+                              setSelectedProduk(
+                                selectedProduk.filter((p) => p.id !== item.id)
+                              )
+                            }
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-                <div className="grid col-span-1 w-full min-w-sm items-center">
-                  <label className="block text-base font-medium text-gray-700">
+
+                <div className="grid grid-cols-2 gap-4 z-10">
+                  <div>
+                    <label className="block text-gray-700 font-medium text-sm">
+                      Diskon
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-700">
+                        Rp
+                      </span>
+                      <input
+                        type="text"
+                        name="diskon"
+                        className="border rounded-lg p-2 w-full pl-10 mt-1"
+                        placeholder="Masukkan diskon"
+                        value={formData.diskon}
+                        onChange={(e) => {
+                          const rawValue = e.target.value.replace(/\D/g, ""); // Hanya angka
+                          const formattedValue = new Intl.NumberFormat(
+                            "id-ID"
+                          ).format(Number(rawValue));
+                          setFormData((prev) => ({
+                            ...prev,
+                            diskon: formattedValue,
+                          }));
+                        }}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-gray-700 font-medium text-sm">
+                      Total Harga
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-700">
+                        Rp
+                      </span>
+                      <input
+                        type="text"
+                        name="total_harga"
+                        className="border rounded-lg p-2 w-full pl-10 mt-1"
+                        placeholder="Total harga"
+                        value={formData.total_harga}
+                        onChange={(e) => {
+                          const rawValue = e.target.value.replace(/\D/g, "");
+                          const formattedValue = new Intl.NumberFormat(
+                            "id-ID"
+                          ).format(Number(rawValue));
+                          setFormData((prev) => ({
+                            ...prev,
+                            total_harga: formattedValue,
+                          }));
+                        }}
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-gray-700 font-medium text-sm">
                     Tanggal & Waktu Penjualan
                   </label>
                   <input
                     type="datetime-local"
                     name="tanggal_penjualan"
-                    className="border p-2 rounded w-full mt-2"
-                    value={formData.tanggal_penjualan.slice(0, 16)} // Show only up to minutes
+                    className="border rounded-lg p-2 w-full mt-1"
+                    value={formData.tanggal_penjualan.slice(0, 16)}
                     onChange={(e) => {
                       const selectedDate = new Date(e.target.value);
                       setFormData((prev) => ({
@@ -524,22 +724,25 @@ export default function PenjualanPage() {
                     required
                   />
                 </div>
-              </div>
-
-              <button
-                type="submit"
-                className="bg-green-500 text-white px-4 py-2 rounded mt-3"
-              >
-                {isEditing ? "Update" : "Add"}
-              </button>
-              <button
-                type="button"
-                onClick={handleModalClose}
-                className="bg-gray-300 text-black px-4 py-2 rounded mt-3 ml-2"
-              >
-                Cancel
-              </button>
-            </form>
+                <div className="border-t p-4 sticky bottom-0 bg-white rounded-b-xl">
+                  <div className="flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={handleModalClose}
+                      className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-lg transition text-sm"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="submit"
+                      className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition text-sm"
+                    >
+                      {isEditing ? "Update" : "Tambah"}
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}

@@ -34,14 +34,14 @@ model detail_penjualan {
 model penjualan {
   id                Int      @id @default(autoincrement())
   id_user           Int
-  id_pelanggan      Int
+  id_pelanggan      Int?
   diskon            Decimal
   total_harga       Decimal
   tanggal_penjualan DateTime
 
   detail_penjualan detail_penjualan[]
   users            users              @relation(fields: [id_user], references: [id])
-  pelanggan        pelanggan          @relation(fields: [id_pelanggan], references: [id])
+  pelanggan        pelanggan?         @relation(fields: [id_pelanggan], references: [id])
 }
 
 model produk {

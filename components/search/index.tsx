@@ -13,7 +13,7 @@ export default function SearchBar({ search, setSearch }: SearchBarProps) {
       </label>
       <input
         type="text"
-        placeholder="Searchs username"
+        placeholder="Search username"
         className="border p-1 rounded flex-1"
         value={search}
         onChange={(e) => setSearch(e.target.value)}

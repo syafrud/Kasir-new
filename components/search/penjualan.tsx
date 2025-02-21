@@ -1,3 +1,4 @@
+import { Plus } from "lucide-react";
 import React from "react";
 
 interface SearchBarProps {
@@ -88,7 +89,9 @@ const SearchBar: React.FC<SearchBarProps> = ({
         <button
           onClick={onAddNew}
           className="bg-green-500 text-white px-4 py-2 rounded h-3/4"
-        ></button>
+        >
+          <Plus />
+        </button>
       </div>
     </div>
   );

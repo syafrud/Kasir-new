@@ -55,7 +55,7 @@ const Accordion = ({ icon, title, children, isExpanded }: AccordionProps) => {
             : "max-h-0 opacity-0 -translate-y-2"
         }`}
       >
-        <div className="flex flex-col gap-3 pt-3">{children}</div>
+        <div className="flex flex-col gap-2 pt-2">{children}</div>
       </div>
     </div>
   );
