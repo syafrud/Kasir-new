@@ -54,6 +54,15 @@ interface Produk {
   stok: number;
 }
 
+interface PenjualanProduct {
+  id_produk: number;
+  qty: number;
+  produk: {
+    nama_produk: string;
+    harga_jual: string;
+  };
+}
+
 export default function PenjualanPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -164,6 +173,7 @@ export default function PenjualanPage() {
     totalRange.maxTotal,
     currentPage,
     itemsPerPage,
+    fetchPenjualan,
   ]);
 
   useEffect(() => {
@@ -212,7 +222,7 @@ export default function PenjualanPage() {
       total_harga: totalSetelahDiskon.toFixed(2),
       diskon: diskon.toFixed(2),
     }));
-  }, [selectedProduk, isPelanggan]);
+  }, [selectedProduk, isPelanggan, produkOptions]);
 
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
@@ -265,10 +275,10 @@ export default function PenjualanPage() {
     try {
       const response = await fetch(`/api/detail/${penjualanId}`);
       const data = await response.json();
-      return data;
+      return data as PenjualanProduct[];
     } catch (error) {
       console.error("Error fetching penjualan products:", error);
-      return [];
+      return [] as PenjualanProduct[];
     }
   };
 
@@ -292,7 +302,7 @@ export default function PenjualanPage() {
     setIsPelanggan(!!penjualan.id_pelanggan);
 
     fetchPenjualanProducts(penjualan.id).then((products) => {
-      const newProdukOptions = products.map((product) => ({
+      const newProdukOptions = products.map((product: PenjualanProduct) => ({
         id: product.id_produk,
         nama_produk: product.produk.nama_produk,
         harga_jual: parseFloat(product.produk.harga_jual),
@@ -300,15 +310,15 @@ export default function PenjualanPage() {
       }));
 
       setProdukOptions((prev) => {
-        const existingIds = prev.map((p) => p.id);
+        const existingIds = prev.map((p: Produk) => p.id);
         const newOptions = newProdukOptions.filter(
-          (p) => !existingIds.includes(p.id)
+          (p: Produk) => !existingIds.includes(p.id)
         );
         return [...prev, ...newOptions];
       });
 
       setSelectedProduk(
-        products.map((product) => ({
+        products.map((product: PenjualanProduct) => ({
           id: product.id_produk,
           quantity: product.qty,
         }))

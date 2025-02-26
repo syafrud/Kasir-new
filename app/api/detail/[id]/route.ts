@@ -3,16 +3,17 @@ import prisma from "@/lib/db";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = parseInt(params.id);
+    const { id } = await context.params; // Await the params object
+    const parsedId = parseInt(id, 10);
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search");
 
     const details = await prisma.detail_penjualan.findMany({
       where: {
-        id_penjualan: id,
+        id_penjualan: parsedId,
         ...(search
           ? {
               produk: {
