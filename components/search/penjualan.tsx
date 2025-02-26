@@ -27,8 +27,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
   onAddNew,
 }) => {
   return (
-    <div className="space-y-4">
-      <div className="flex gap-4 items-end">
+    <div className="space-y-4 w-full">
+      <div className="flex gap-4 items-end justify-between">
         <div className="flex gap-4 ">
           <div className="flex-1">
             <input

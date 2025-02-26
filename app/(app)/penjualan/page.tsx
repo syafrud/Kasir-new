@@ -261,6 +261,17 @@ export default function PenjualanPage() {
     fetchPelanggan();
   }, []);
 
+  const fetchPenjualanProducts = async (penjualanId: number) => {
+    try {
+      const response = await fetch(`/api/detail/${penjualanId}`);
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Error fetching penjualan products:", error);
+      return [];
+    }
+  };
+
   const handleEdit = (penjualan: Penjualan) => {
     setIsEditing(true);
     setEditPenjualan(penjualan);
@@ -269,12 +280,41 @@ export default function PenjualanPage() {
     const formattedDate = date.toISOString();
 
     setFormData({
-      id_user: penjualan.id_user.toString(),
-      id_pelanggan: penjualan.id_pelanggan.toString(),
-      diskon: penjualan.diskon,
-      total_harga: penjualan.total_harga,
+      id_user: penjualan.id_user ? penjualan.id_user.toString() : "",
+      id_pelanggan: penjualan.id_pelanggan
+        ? penjualan.id_pelanggan.toString()
+        : "",
+      diskon: penjualan.diskon || "",
+      total_harga: penjualan.total_harga || "",
       tanggal_penjualan: formattedDate,
     });
+
+    setIsPelanggan(!!penjualan.id_pelanggan);
+
+    fetchPenjualanProducts(penjualan.id).then((products) => {
+      const newProdukOptions = products.map((product) => ({
+        id: product.id_produk,
+        nama_produk: product.produk.nama_produk,
+        harga_jual: parseFloat(product.produk.harga_jual),
+        stok: 0,
+      }));
+
+      setProdukOptions((prev) => {
+        const existingIds = prev.map((p) => p.id);
+        const newOptions = newProdukOptions.filter(
+          (p) => !existingIds.includes(p.id)
+        );
+        return [...prev, ...newOptions];
+      });
+
+      setSelectedProduk(
+        products.map((product) => ({
+          id: product.id_produk,
+          quantity: product.qty,
+        }))
+      );
+    });
+
     setIsModalOpen(true);
   };
 
@@ -318,13 +358,13 @@ export default function PenjualanPage() {
         "id_pelanggan",
         isPelanggan ? formData.id_pelanggan.toString() : ""
       );
-      submitData.append("diskon", formData.diskon.replace(/[.,]/g, ""));
+      submitData.append("diskon", String(parseInt(formData.diskon || "0", 10)));
       submitData.append(
         "total_harga",
-        formData.total_harga.replace(/[.,]/g, "")
+        String(parseInt(formData.total_harga || "0", 10))
       );
-      submitData.append("tanggal_penjualan", formData.tanggal_penjualan);
 
+      submitData.append("tanggal_penjualan", formData.tanggal_penjualan);
       submitData.append("selectedProduk", JSON.stringify(selectedProduk));
 
       if (isEditing && editPenjualan) {
@@ -373,11 +413,27 @@ export default function PenjualanPage() {
     setIsModalOpen(false);
   };
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+
+    const rawValue = value.replace(/\D/g, "");
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: rawValue,
+    }));
+  };
+
+  const formatCurrency = (value: string) => {
+    if (!value) return "";
+    return new Intl.NumberFormat("id-ID").format(Number(value));
+  };
+
   return (
     <div className="">
       <h1 className="text-2xl font-bold mb-4">Penjualan Management</h1>
 
-      <div className="flex flex-row gap-5 items-end text-center mb-3">
+      <div className="flex flex-row gap-5 items-end text-center mb-3 ">
         <div className="flex items-center gap-4 min-h-10">
           <span className="text-gray-600">Show</span>
 
@@ -659,17 +715,8 @@ export default function PenjualanPage() {
                         name="diskon"
                         className="border rounded-lg p-2 w-full pl-10 mt-1"
                         placeholder="Masukkan diskon"
-                        value={formData.diskon}
-                        onChange={(e) => {
-                          const rawValue = e.target.value.replace(/\D/g, ""); // Hanya angka
-                          const formattedValue = new Intl.NumberFormat(
-                            "id-ID"
-                          ).format(Number(rawValue));
-                          setFormData((prev) => ({
-                            ...prev,
-                            diskon: formattedValue,
-                          }));
-                        }}
+                        value={formatCurrency(formData.diskon)}
+                        onChange={handleChange}
                         required
                       />
                     </div>
@@ -688,17 +735,8 @@ export default function PenjualanPage() {
                         name="total_harga"
                         className="border rounded-lg p-2 w-full pl-10 mt-1"
                         placeholder="Total harga"
-                        value={formData.total_harga}
-                        onChange={(e) => {
-                          const rawValue = e.target.value.replace(/\D/g, "");
-                          const formattedValue = new Intl.NumberFormat(
-                            "id-ID"
-                          ).format(Number(rawValue));
-                          setFormData((prev) => ({
-                            ...prev,
-                            total_harga: formattedValue,
-                          }));
-                        }}
+                        value={formatCurrency(formData.total_harga)}
+                        onChange={handleChange}
                         required
                       />
                     </div>

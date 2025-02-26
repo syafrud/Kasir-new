@@ -271,7 +271,6 @@ export default function ProdukPage() {
   const handleStockAdjustmentInput = (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
-    // Ensure we only get positive values in the input
     const value = Math.abs(parseInt(e.target.value) || 0);
     setStockAdjustment(value);
   };
