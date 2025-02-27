@@ -1,10 +1,36 @@
+// Define types for the data structure
+interface Produk {
+  nama_produk: string;
+}
+
+interface DetailPenjualan {
+  produk: Produk;
+  qty: number;
+  harga_jual: string | number;
+  total_harga: string | number;
+}
+
+interface Pelanggan {
+  nama: string;
+  alamat: string;
+}
+
+interface Penjualan {
+  id: number;
+  pelanggan?: Pelanggan;
+  tanggal_penjualan: string;
+  detail_penjualan: DetailPenjualan[];
+  diskon: string | number;
+  total_harga: string | number;
+}
+
 export const PrintInvoice = async (id: number) => {
   try {
     const res = await fetch(`/api/penjualan/${id}`);
     if (!res.ok) {
       throw new Error("Failed to fetch data");
     }
-    const penjualan = await res.json();
+    const penjualan: Penjualan = await res.json();
 
     const printWindow = window.open("", "_blank", "width=800,height=600");
     if (!printWindow) {
@@ -98,7 +124,7 @@ export const PrintInvoice = async (id: number) => {
                 <tbody>
                   ${penjualan.detail_penjualan
                     .map(
-                      (detail, index) => `
+                      (detail: DetailPenjualan, index: number) => `
                     <tr>
                       <td class="border border-gray-300 p-2 text-center">${
                         index + 1
@@ -110,13 +136,13 @@ export const PrintInvoice = async (id: number) => {
                         detail.qty
                       }</td>
                       <td class="border border-gray-300 p-2 text-right">Rp ${parseInt(
-                        detail.harga_jual
+                        detail.harga_jual as string
                       ).toLocaleString("id-ID")}</td>
                       <td class="border border-gray-300 p-2 text-right">Rp ${parseInt(
-                        detail.total_harga
+                        detail.total_harga as string
                       ).toLocaleString("id-ID")}</td>
                       <td class="border border-gray-300 p-2 text-right">Rp ${parseInt(
-                        detail.total_harga
+                        detail.total_harga as string
                       ).toLocaleString("id-ID")}</td>
                     </tr>
                   `
@@ -130,13 +156,13 @@ export const PrintInvoice = async (id: number) => {
                   <tr>
                     <td class="border border-gray-300 p-2 font-bold">Diskon</td>
                     <td class="border border-gray-300 p-2 text-right">Rp ${parseInt(
-                      penjualan.diskon
+                      penjualan.diskon as string
                     ).toLocaleString("id-ID")}</td>
                   </tr>
                   <tr>
                     <td class="border border-gray-300 p-2 font-bold">Subtotal</td>
                     <td class="border border-gray-300 p-2 text-right">Rp ${parseInt(
-                      penjualan.total_harga
+                      penjualan.total_harga as string
                     ).toLocaleString("id-ID")}</td>
                   </tr>
 
@@ -147,7 +173,7 @@ export const PrintInvoice = async (id: number) => {
                   <tr>
                     <td class="border border-gray-300 p-2 font-bold">Total</td>
                     <td class="border border-gray-300 p-2 text-right">Rp ${parseInt(
-                      penjualan.total_harga
+                      penjualan.total_harga as string
                     ).toLocaleString("id-ID")}</td>
                   </tr>
                   <tr>
@@ -159,7 +185,7 @@ export const PrintInvoice = async (id: number) => {
                   <tr>
                     <td class="border border-gray-300 p-2 font-bold">Kurang</td>
                     <td class="border border-gray-300 p-2 text-right">Rp ${(
-                      parseInt(penjualan.total_harga) - 5000
+                      parseInt(penjualan.total_harga as string) - 5000
                     ).toLocaleString("id-ID")}</td>
                   </tr>
                 </tbody>

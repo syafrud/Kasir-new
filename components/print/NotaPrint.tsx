@@ -1,10 +1,33 @@
+interface DetailPenjualan {
+  produk: {
+    nama_produk: string;
+  };
+  harga_jual: number | string;
+  qty: number;
+  total_harga: number | string;
+}
+
+interface Penjualan {
+  tanggal_penjualan: string;
+  users: {
+    nama_user: string;
+  };
+  pelanggan?: {
+    nama: string;
+  };
+  detail_penjualan: DetailPenjualan[];
+  total_harga: number | string;
+  diskon: number | string;
+}
+
 export const NotaPrint = async (id: number) => {
   try {
     const res = await fetch(`/api/penjualan/${id}`);
     if (!res.ok) {
       throw new Error("Failed to fetch data");
     }
-    const penjualan = await res.json();
+
+    const penjualan: Penjualan = await res.json();
 
     const printWindow = window.open("", "_blank", "width=400,height=600");
     if (!printWindow) {
@@ -77,16 +100,16 @@ export const NotaPrint = async (id: number) => {
             <div class="border-b border-dashed border-gray-400 py-2">
               ${penjualan.detail_penjualan
                 .map(
-                  (detail) => `
+                  (detail: DetailPenjualan) => ` 
                 <div class="mb-2">
                   <div>${detail.produk.nama_produk}</div>
                   <div class="flex justify-between">
-                    <span>Rp ${parseInt(detail.harga_jual).toLocaleString(
-                      "id-ID"
-                    )} x ${detail.qty}</span>
-                    <span>Rp ${parseInt(detail.total_harga).toLocaleString(
-                      "id-ID"
-                    )}</span>
+                    <span>Rp ${parseInt(
+                      detail.harga_jual as string
+                    ).toLocaleString("id-ID")} x ${detail.qty}</span>
+                    <span>Rp ${parseInt(
+                      detail.total_harga as string
+                    ).toLocaleString("id-ID")}</span>
                   </div>
                 </div>
               `
@@ -97,13 +120,13 @@ export const NotaPrint = async (id: number) => {
             <div class="py-2">
               <div class="flex justify-between">
                 <span>Sub Total</span>
-                <span>Rp ${parseInt(penjualan.total_harga).toLocaleString(
-                  "id-ID"
-                )}</span>
+                <span>Rp ${parseInt(
+                  penjualan.total_harga as string
+                ).toLocaleString("id-ID")}</span>
               </div>
               <div class="flex justify-between">
                 <span>Diskon</span>
-                <span>Rp ${parseInt(penjualan.diskon).toLocaleString(
+                <span>Rp ${parseInt(penjualan.diskon as string).toLocaleString(
                   "id-ID"
                 )}</span>
               </div>
@@ -113,9 +136,9 @@ export const NotaPrint = async (id: number) => {
               </div>
               <div class="flex justify-between font-bold">
                 <span>Neto</span>
-                <span>Rp ${parseInt(penjualan.total_harga).toLocaleString(
-                  "id-ID"
-                )}</span>
+                <span>Rp ${parseInt(
+                  penjualan.total_harga as string
+                ).toLocaleString("id-ID")}</span>
               </div>
               <div class="flex justify-between">
                 <span>Dibayar</span>
@@ -124,7 +147,7 @@ export const NotaPrint = async (id: number) => {
               <div class="flex justify-between font-bold">
                 <span>Kurang</span>
                 <span>Rp ${(
-                  parseInt(penjualan.total_harga) - 5000
+                  parseInt(penjualan.total_harga as string) - 5000
                 ).toLocaleString("id-ID")}</span>
               </div>
             </div>

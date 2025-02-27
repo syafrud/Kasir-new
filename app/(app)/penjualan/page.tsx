@@ -14,7 +14,7 @@ import SearchBarProduk from "@/components/search/produkSearch";
 import Image from "next/image";
 import { PrintInvoice } from "@/components/print/PrintInvoice";
 import { NotaPrint } from "@/components/print/NotaPrint";
-import { Circle, CircleEllipsis, Printer, SquarePen, X } from "lucide-react";
+import { CircleEllipsis, Printer, SquarePen, X } from "lucide-react";
 
 interface Penjualan {
   id: number;
