@@ -6,7 +6,7 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await context.params; // Await the params object
+    const { id } = await context.params;
     const parsedId = parseInt(id, 10);
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search");

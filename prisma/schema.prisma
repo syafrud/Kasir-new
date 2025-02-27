@@ -51,6 +51,7 @@ model produk {
   harga_beli  Decimal
   harga_jual  Decimal
   stok        Int
+  image       String
   barcode     String   @unique
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt

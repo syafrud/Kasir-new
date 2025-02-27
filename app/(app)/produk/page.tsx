@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   createProduk,
   updateProduk,
@@ -9,8 +9,9 @@ import {
 } from "@/app/api/produk/actions";
 import SearchBar from "@/components/search";
 import toast from "react-hot-toast";
-import { Plus } from "lucide-react";
+import { Plus, Upload, Image as ImageIcon } from "lucide-react";
 import RupiahInput from "@/components/RupiahInput";
+import Image from "next/image";
 
 interface Produk {
   id: number;
@@ -21,6 +22,7 @@ interface Produk {
   harga_jual: string;
   stok: string;
   barcode: string;
+  image: string;
 }
 
 interface Kategori {
@@ -55,6 +57,9 @@ export default function ProdukPage() {
     stok: "",
     barcode: "",
   });
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [stockAdjustment, setStockAdjustment] = useState(0);
   const [adjustmentType, setAdjustmentType] = useState("+");
 
@@ -140,6 +145,8 @@ export default function ProdukPage() {
       stok: produk.stok,
       barcode: produk.barcode,
     });
+    setImagePreview(produk.image || null);
+    setSelectedImage(null);
     setStockAdjustment(0);
     setAdjustmentType("+");
     setIsModalOpen(true);
@@ -169,6 +176,14 @@ export default function ProdukPage() {
     }
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setSelectedImage(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -186,11 +201,20 @@ export default function ProdukPage() {
         return;
       }
 
+      if (!isEditing && !selectedImage) {
+        toast.error("Gambar produk harus diunggah");
+        return;
+      }
+
       submitData.append("nama_produk", formData.nama_produk);
       submitData.append("id_kategori", formData.id_kategori);
       submitData.append("harga_beli", formData.harga_beli);
       submitData.append("harga_jual", formData.harga_jual);
       submitData.append("barcode", formData.barcode);
+
+      if (selectedImage) {
+        submitData.append("image", selectedImage);
+      }
 
       if (isEditing && editProduk) {
         if (stockAdjustment !== 0) {
@@ -230,6 +254,8 @@ export default function ProdukPage() {
       setIsModalOpen(false);
       setIsEditing(false);
       setEditProduk(null);
+      setSelectedImage(null);
+      setImagePreview(null);
       setStockAdjustment(0);
       setAdjustmentType("+");
     } catch (error) {
@@ -248,6 +274,8 @@ export default function ProdukPage() {
       stok: "",
       barcode: "",
     });
+    setSelectedImage(null);
+    setImagePreview(null);
     setStockAdjustment(0);
     setAdjustmentType("+");
     setIsModalOpen(true);
@@ -277,6 +305,8 @@ export default function ProdukPage() {
 
   const handleModalClose = () => {
     setIsModalOpen(false);
+    setSelectedImage(null);
+    setImagePreview(null);
   };
 
   const calculateFinalStock = () => {
@@ -285,6 +315,12 @@ export default function ProdukPage() {
     return adjustmentType === "+"
       ? currentStock + stockAdjustment
       : currentStock - stockAdjustment;
+  };
+
+  const triggerFileInput = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
   };
 
   return (
@@ -322,11 +358,12 @@ export default function ProdukPage() {
         <thead>
           <tr>
             <th className="border p-2">NO</th>
+            <th className="border p-2 w-1/6">Gambar</th>
             <th className="border p-2 w-1/6">Nama Produk</th>
             <th className="border p-2 w-1/6">kategori</th>
             <th className="border p-2 w-1/6">Harga Beli</th>
             <th className="border p-2 w-1/6">Harga Jual</th>
-            <th className="border p-2 w-1/6">Stok</th>
+            <th className="border p-2 min-w-16">Stok</th>
             <th className="border p-2 w-1/6">barcode</th>
             <th className="border py-2 px-16 w-52">Actions</th>
           </tr>
@@ -335,6 +372,21 @@ export default function ProdukPage() {
           {produks.map((produk, index) => (
             <tr key={produk.id}>
               <td className="border p-2 text-center">{index + 1}</td>
+              <td className="border p-2 text-center">
+                {produk.image ? (
+                  <Image
+                    src={produk.image}
+                    alt={produk.nama_produk}
+                    width={100}
+                    height={100}
+                    className="w-full h-24 object-contain"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-24">
+                    <ImageIcon className="text-gray-300" size={40} />
+                  </div>
+                )}
+              </td>
               <td className="border p-2">{produk.nama_produk}</td>
               <td className="border p-2">{produk.kategori?.nama_kategori}</td>
               <td className="border p-2 text-right">
@@ -351,7 +403,6 @@ export default function ProdukPage() {
                   minimumFractionDigits: 2,
                 }).format(Number(produk.harga_jual))}
               </td>
-
               <td className="border p-2 text-right">{produk.stok}</td>
               <td className="border p-2 text-center">{produk.barcode}</td>
               <td className="border p-2 text-center">
@@ -556,19 +607,86 @@ export default function ProdukPage() {
                 </div>
               </div>
 
-              <button
-                type="submit"
-                className="bg-green-500 text-white px-4 py-2 rounded mt-3"
-              >
-                {isEditing ? "Update" : "Add"}
-              </button>
-              <button
-                type="button"
-                onClick={handleModalClose}
-                className="bg-gray-300 text-black px-4 py-2 rounded mt-3 ml-2"
-              >
-                Cancel
-              </button>
+              {/* Image Upload Section */}
+              <div className="col-span-2 mt-3">
+                <label className="block text-base font-medium text-gray-700 mb-2">
+                  Gambar Produk
+                </label>
+                <div className="flex flex-col sm:flex-row gap-4 items-center">
+                  <div
+                    className="w-40 h-40 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50"
+                    onClick={triggerFileInput}
+                  >
+                    {imagePreview ? (
+                      <Image
+                        src={imagePreview}
+                        alt="Preview"
+                        width={160}
+                        height={160}
+                        className="w-full h-full object-contain rounded-lg"
+                      />
+                    ) : (
+                      <>
+                        <Upload className="h-10 w-10 text-gray-400" />
+                        <p className="mt-2 text-sm text-gray-500">
+                          Klik untuk upload
+                        </p>
+                      </>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleImageChange}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={triggerFileInput}
+                      className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none"
+                    >
+                      {imagePreview ? "Ganti Gambar" : "Pilih Gambar"}
+                    </button>
+                    {imagePreview && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedImage(null);
+                          setImagePreview(null);
+                        }}
+                        className="ml-2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 focus:outline-none"
+                      >
+                        Hapus
+                      </button>
+                    )}
+                    <p className="mt-1 text-sm text-gray-500">
+                      {selectedImage
+                        ? selectedImage.name
+                        : isEditing && !selectedImage && imagePreview
+                        ? "Gunakan gambar yang ada"
+                        : "JPG, PNG, atau GIF (maks. 2MB)"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="col-span-2 flex justify-end mt-4 gap-2">
+                <button
+                  type="button"
+                  onClick={handleModalClose}
+                  className="bg-gray-300 text-black px-4 py-2 rounded"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="bg-green-500 text-white px-4 py-2 rounded"
+                >
+                  {isEditing ? "Update" : "Add"}
+                </button>
+              </div>
             </form>
           </div>
         </div>
