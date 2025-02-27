@@ -1,3 +1,4 @@
+// File: app/penjualan/page.tsx
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -11,6 +12,9 @@ import SearchBar from "@/components/search/penjualan";
 import { useRouter } from "next/navigation";
 import SearchBarProduk from "@/components/search/produkSearch";
 import Image from "next/image";
+import { PrintInvoice } from "@/components/print/PrintInvoice";
+import { NotaPrint } from "@/components/print/NotaPrint";
+import { Circle, CircleEllipsis, Printer, SquarePen, X } from "lucide-react";
 
 interface Penjualan {
   id: number;
@@ -498,7 +502,8 @@ export default function PenjualanPage() {
             <th className="border p-2 w-1/5">Diskon</th>
             <th className="border p-2 w-1/5">Total</th>
             <th className="border p-2 w-1/5">Tanggal & Waktu</th>
-            <th className="border py-2 px-16 w-52">Actions</th>
+            <th className="border py-2 "> Invoice</th>
+            <th className="border py-2 ">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -516,25 +521,85 @@ export default function PenjualanPage() {
               <td className="border p-2 text-center">
                 {formatTanggal(item.tanggal_penjualan)}
               </td>
-              <td className="flex flex-row border gap-3 p-3">
-                <button
-                  onClick={() => handleEdit(item)}
-                  className="w-1/2 bg-blue-500 text-white px-4 py-2 rounded"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => openConfirmModal(item.id)}
-                  className="w-1/2 bg-red-500 text-white px-4 py-2 rounded"
-                >
-                  Delete
-                </button>
-                <button
-                  onClick={() => handleDetail(item.id)}
-                  className="w-1/2 bg-green-500 text-white px-4 py-2 rounded"
-                >
-                  Detail
-                </button>
+              <td>
+                <div className="flex flex-row border gap-2 p-3">
+                  <div className="relative w-1/2 group">
+                    <button
+                      onClick={() => NotaPrint(item.id)}
+                      className="flex justify-center items-center max-w-9 max-h-9 bg-[#6c757d] text-white px-2 py-2 rounded text-sm hover:bg-[#565e64] transition-colors"
+                    >
+                      <Printer className="" />
+                    </button>
+                    <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1 hidden group-hover:block">
+                      <div className="bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+                        Print Nota
+                      </div>
+                      <div className="w-2 h-2 bg-gray-800 transform rotate-45 mx-auto -mt-1"></div>
+                    </div>
+                  </div>
+                  <div className="relative w-1/2 group">
+                    <button
+                      onClick={() => PrintInvoice(item.id)}
+                      className="flex justify-center items-center max-w-9 max-h-9 bg-[#ffc107] text-black px-2 py-2 rounded text-sm hover:bg-[#ffca2c] transition-colors"
+                    >
+                      <Printer className="" />
+                    </button>
+                    <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1 hidden group-hover:block">
+                      <div className="bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+                        Print Invoice
+                      </div>
+                      <div className="w-2 h-2 bg-gray-800 transform rotate-45 mx-auto -mt-1"></div>
+                    </div>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div className="flex flex-row border gap-2 p-3">
+                  <div className="relative w-1/3 group">
+                    <button
+                      onClick={() => handleEdit(item)}
+                      className="flex justify-center items-center max-w-9 max-h-9 bg-[#198754] text-white px-2 py-2 rounded text-sm hover:bg-[#146c43] transition-colors"
+                    >
+                      <SquarePen className="" />
+                    </button>
+                    <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1 hidden group-hover:block">
+                      <div className="bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+                        Edit Data
+                      </div>
+                      <div className="w-2 h-2 bg-gray-800 transform rotate-45 mx-auto -mt-1"></div>
+                    </div>
+                  </div>
+
+                  <div className="relative w-1/3 group">
+                    <button
+                      onClick={() => openConfirmModal(item.id)}
+                      className="flex justify-center items-center max-w-9 max-h-9 bg-[#dc3545] text-white px-2 py-2 rounded text-sm hover:bg-[#b02a37] transition-colors"
+                    >
+                      <X className="" />
+                    </button>
+                    <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1 hidden group-hover:block">
+                      <div className="bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+                        Delete Data
+                      </div>
+                      <div className="w-2 h-2 bg-gray-800 transform rotate-45 mx-auto -mt-1"></div>
+                    </div>
+                  </div>
+
+                  <div className="relative w-1/3 group">
+                    <button
+                      onClick={() => handleDetail(item.id)}
+                      className="flex justify-center items-center max-w-9 max-h-9 bg-[#0d6efd] text-white px-2 py-2 rounded text-sm hover:bg-[#0b5ed7] transition-colors"
+                    >
+                      <CircleEllipsis className="" />
+                    </button>
+                    <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1 hidden group-hover:block">
+                      <div className="bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+                        Detail
+                      </div>
+                      <div className="w-2 h-2 bg-gray-800 transform rotate-45 mx-auto -mt-1"></div>
+                    </div>
+                  </div>
+                </div>
               </td>
             </tr>
           ))}
