@@ -365,7 +365,7 @@ export default function ProdukPage() {
             <th className="border p-2 w-1/6">Harga Jual</th>
             <th className="border p-2 min-w-16">Stok</th>
             <th className="border p-2 w-1/6">barcode</th>
-            <th className="border py-2 px-16 w-52">Actions</th>
+            <th className="border py-2 w-52">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -405,7 +405,7 @@ export default function ProdukPage() {
               </td>
               <td className="border p-2 text-right">{produk.stok}</td>
               <td className="border p-2 text-center">{produk.barcode}</td>
-              <td className="border p-2 text-center">
+              <td className="border p-3 text-center">
                 <div className="flex justify-center gap-2">
                   <button
                     onClick={() => handleEdit(produk)}

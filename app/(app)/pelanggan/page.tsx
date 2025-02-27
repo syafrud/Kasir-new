@@ -221,7 +221,7 @@ export default function PelangganPage() {
               <td className="border p-2">{pelanggan.alamat}</td>
               <td className="border p-2 text-right">{pelanggan.hp}</td>
               <td className="border p-2 text-right">{pelanggan.status}</td>
-              <td className="flex flex-row border gap-2 p-2">
+              <td className="border p-3 text-center">
                 <div className="flex justify-center gap-2">
                   <button
                     onClick={() => handleEdit(pelanggan)}

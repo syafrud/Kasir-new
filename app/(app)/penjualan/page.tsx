@@ -314,25 +314,21 @@ export default function PenjualanPage() {
     try {
       const products = await fetchPenjualanProducts(penjualan.id);
 
-      // Create temporary product data with complete required fields
       const tempProducts = products.map((product: PenjualanProduct) => ({
         id: product.id_produk,
         nama_produk: product.produk.nama_produk,
         harga_jual: parseFloat(product.produk.harga_jual),
         stok: 0,
-        image: "", // Add missing required field
+        image: "",
       }));
 
-      // Filter out products that already exist in produkOptions
       const existingIds = produkOptions.map((p) => p.id);
       const newProducts = tempProducts.filter(
         (p) => !existingIds.includes(p.id)
       );
 
-      // Update produkOptions with proper typing
       setProdukOptions((prev) => [...prev, ...newProducts]);
 
-      // Update selectedProduk
       setSelectedProduk(
         products.map((product: PenjualanProduct) => ({
           id: product.id_produk,

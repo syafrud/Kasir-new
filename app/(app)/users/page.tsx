@@ -249,7 +249,7 @@ export default function UserPage() {
             <th className="border p-2 text-left">Alamat</th>
             <th className="border p-2 text-left">HP</th>
             <th className="border p-2 text-center">Status</th>
-            <th className="border p-2 text-center">Aksi</th>
+            <th className="border py-2 px-16 w-52">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -265,7 +265,7 @@ export default function UserPage() {
               <td className="border p-2 max-w-72">{user.alamat}</td>
               <td className="border p-2">{user.hp}</td>
               <td className="border p-2 text-center">{user.status}</td>
-              <td className="border p-2">
+              <td className="border p-3 text-center">
                 <div className="flex justify-center gap-2">
                   <button
                     onClick={() => handleEdit(user)}

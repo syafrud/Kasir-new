@@ -35,8 +35,8 @@ export default function DashboardLayout({
 
   return (
     <div className="relative z-[1000]">
-      <div className="topbar fixed top-0 left-0 w-full h-[62px] flex items-center bg-[#0178bc] z-50 shadow-lg">
-        <div className="bg-white w-[276px] h-full flex items-center px-3 gap-3">
+      <div className="topbar fixed top-0 left-0 w-full h-[62px] flex items-center bg-[#0178bc] z-50 shadow-md">
+        <div className="bg-white min-w-[225px] max-w-[225px] h-full flex items-center px-3 gap-3">
           <Image
             src="/logo.png"
             alt="IndoKasir Logo"
