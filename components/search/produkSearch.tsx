@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { useState, useEffect } from "react";
 
 interface Produk {
@@ -6,6 +7,7 @@ interface Produk {
   barcode: string;
   harga_jual: number;
   stok: number;
+  image: string;
 }
 
 interface SearchBarProps {
@@ -72,10 +74,36 @@ export default function SearchBarProduk({ onSelect }: SearchBarProps) {
             <li
               key={produk.id}
               onClick={() => onSelect(produk)}
-              className="p-2 hover:bg-gray-100 cursor-pointer"
+              className="p-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3"
             >
-              <p className="font-semibold">{produk.nama_produk}</p>
-              <p className="text-sm text-gray-500">Barcode: {produk.barcode}</p>
+              <div className="w-16 h-16 flex-shrink-0">
+                {produk.image ? (
+                  <Image
+                    src={produk.image}
+                    alt={produk.nama_produk}
+                    width={64}
+                    height={64}
+                    className="w-full h-full object-cover rounded-md"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-200 rounded-md flex items-center justify-center">
+                    <span className="text-gray-400 text-xs">No Image</span>
+                  </div>
+                )}
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold">{produk.nama_produk}</p>
+                <p className="text-sm text-gray-500">
+                  Barcode: {produk.barcode}
+                </p>
+                <p className="text-sm text-green-600">
+                  Rp{" "}
+                  {parseInt(produk.harga_jual.toString()).toLocaleString(
+                    "id-ID"
+                  )}
+                </p>
+                <p className="text-xs text-gray-500">Stok: {produk.stok}</p>
+              </div>
             </li>
           ))}
         </ul>

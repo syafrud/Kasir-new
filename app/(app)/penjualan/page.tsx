@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   createPenjualan,
   updatePenjualan,
@@ -10,6 +10,7 @@ import toast from "react-hot-toast";
 import SearchBar from "@/components/search/penjualan";
 import { useRouter } from "next/navigation";
 import SearchBarProduk from "@/components/search/produkSearch";
+import Image from "next/image";
 
 interface Penjualan {
   id: number;
@@ -52,6 +53,7 @@ interface Produk {
   nama_produk: string;
   harga_jual: number;
   stok: number;
+  image: string;
 }
 
 interface PenjualanProduct {
@@ -129,7 +131,7 @@ export default function PenjualanPage() {
     return `${time}, ${dateStr}`;
   };
 
-  const fetchPenjualan = async () => {
+  const fetchPenjualan = useCallback(async () => {
     try {
       const searchParams = new URLSearchParams();
       if (search) searchParams.append("search", search);
@@ -161,7 +163,15 @@ export default function PenjualanPage() {
         setError("An unexpected error occurred");
       }
     }
-  };
+  }, [
+    search,
+    dateRange.startDate,
+    dateRange.endDate,
+    totalRange.minTotal,
+    totalRange.maxTotal,
+    currentPage,
+    itemsPerPage,
+  ]);
 
   useEffect(() => {
     fetchPenjualan();
@@ -282,7 +292,7 @@ export default function PenjualanPage() {
     }
   };
 
-  const handleEdit = (penjualan: Penjualan) => {
+  const handleEdit = async (penjualan: Penjualan) => {
     setIsEditing(true);
     setEditPenjualan(penjualan);
 
@@ -301,29 +311,37 @@ export default function PenjualanPage() {
 
     setIsPelanggan(!!penjualan.id_pelanggan);
 
-    fetchPenjualanProducts(penjualan.id).then((products) => {
-      const newProdukOptions = products.map((product: PenjualanProduct) => ({
+    try {
+      const products = await fetchPenjualanProducts(penjualan.id);
+
+      // Create temporary product data with complete required fields
+      const tempProducts = products.map((product: PenjualanProduct) => ({
         id: product.id_produk,
         nama_produk: product.produk.nama_produk,
         harga_jual: parseFloat(product.produk.harga_jual),
         stok: 0,
+        image: "", // Add missing required field
       }));
 
-      setProdukOptions((prev) => {
-        const existingIds = prev.map((p: Produk) => p.id);
-        const newOptions = newProdukOptions.filter(
-          (p: Produk) => !existingIds.includes(p.id)
-        );
-        return [...prev, ...newOptions];
-      });
+      // Filter out products that already exist in produkOptions
+      const existingIds = produkOptions.map((p) => p.id);
+      const newProducts = tempProducts.filter(
+        (p) => !existingIds.includes(p.id)
+      );
 
+      // Update produkOptions with proper typing
+      setProdukOptions((prev) => [...prev, ...newProducts]);
+
+      // Update selectedProduk
       setSelectedProduk(
         products.map((product: PenjualanProduct) => ({
           id: product.id_produk,
           quantity: product.qty,
         }))
       );
-    });
+    } catch (error) {
+      console.error("Error setting up edit mode:", error);
+    }
 
     setIsModalOpen(true);
   };
@@ -402,10 +420,14 @@ export default function PenjualanPage() {
   const handleAddNew = () => {
     setIsEditing(false);
     setEditPenjualan(null);
-    setFormData((prev) => ({
-      ...prev,
+    setFormData({
+      id_user: "",
+      id_pelanggan: "",
+      diskon: "",
+      total_harga: "",
       tanggal_penjualan: new Date().toISOString(),
-    }));
+    });
+    setSelectedProduk([]);
     setIsModalOpen(true);
   };
 
@@ -676,9 +698,29 @@ export default function PenjualanPage() {
                         key={index}
                         className="flex justify-between items-center p-2 border rounded-lg mt-1"
                       >
-                        <span>
-                          {produk?.nama_produk} - Rp{produk?.harga_jual}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-10 h-10 flex-shrink-0">
+                            {produk?.image ? (
+                              <Image
+                                src={produk.image}
+                                alt={produk?.nama_produk || ""}
+                                width={40}
+                                height={40}
+                                className="w-full h-full object-cover rounded-md"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-gray-200 rounded-md flex items-center justify-center">
+                                <span className="text-gray-400 text-xs">
+                                  No
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                          <span>
+                            {produk?.nama_produk} - Rp{" "}
+                            {produk?.harga_jual.toLocaleString("id-ID")}
+                          </span>
+                        </div>
                         <div>
                           <input
                             type="number"
@@ -696,6 +738,7 @@ export default function PenjualanPage() {
                             className="w-16 border rounded p-1 text-center"
                           />
                           <button
+                            type="button"
                             className="ml-2 text-red-500 hover:text-red-700"
                             onClick={() =>
                               setSelectedProduk(
