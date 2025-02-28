@@ -37,6 +37,9 @@ model penjualan {
   id_pelanggan      Int?
   diskon            Decimal
   total_harga       Decimal
+  penyesuaian       Decimal  @default(0)
+  total_bayar       Decimal
+  kembalian         Decimal  @default(0)
   tanggal_penjualan DateTime
 
   detail_penjualan detail_penjualan[]

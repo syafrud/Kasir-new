@@ -19,6 +19,9 @@ function formatPesanProdukTidakCukup(produkList: string[]): string {
 export async function createPenjualan(formdata: FormData) {
   const diskon = formdata.get("diskon") as string;
   const total_harga = formdata.get("total_harga") as string;
+  const penyesuaian = (formdata.get("penyesuaian") as string) || "0";
+  const total_bayar = formdata.get("total_bayar") as string;
+  const kembalian = (formdata.get("kembalian") as string) || "0";
   const id_user = Number(formdata.get("id_user"));
   const id_pelanggan_raw = formdata.get("id_pelanggan") as string;
   const id_pelanggan = id_pelanggan_raw ? Number(id_pelanggan_raw) : null;
@@ -32,6 +35,9 @@ export async function createPenjualan(formdata: FormData) {
         id_pelanggan,
         diskon: new Prisma.Decimal(diskon),
         total_harga: new Prisma.Decimal(total_harga),
+        penyesuaian: new Prisma.Decimal(penyesuaian),
+        total_bayar: new Prisma.Decimal(total_bayar),
+        kembalian: new Prisma.Decimal(kembalian),
         tanggal_penjualan: new Date(tanggal_penjualan),
       },
     });
@@ -95,6 +101,9 @@ export async function createPenjualan(formdata: FormData) {
 export async function updatePenjualan(formdata: FormData, id: number) {
   const diskon = formdata.get("diskon") as string;
   const total_harga = formdata.get("total_harga") as string;
+  const penyesuaian = (formdata.get("penyesuaian") as string) || "0";
+  const total_bayar = formdata.get("total_bayar") as string;
+  const kembalian = (formdata.get("kembalian") as string) || "0";
   const id_user = Number(formdata.get("id_user"));
   const id_pelanggan_raw = formdata.get("id_pelanggan") as string;
   const id_pelanggan = id_pelanggan_raw ? Number(id_pelanggan_raw) : null;
@@ -146,6 +155,9 @@ export async function updatePenjualan(formdata: FormData, id: number) {
         id_pelanggan,
         diskon: new Prisma.Decimal(diskon),
         total_harga: new Prisma.Decimal(total_harga),
+        penyesuaian: new Prisma.Decimal(penyesuaian),
+        total_bayar: new Prisma.Decimal(total_bayar),
+        kembalian: new Prisma.Decimal(kembalian),
         tanggal_penjualan: new Date(tanggal_penjualan),
       },
     });

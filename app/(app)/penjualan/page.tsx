@@ -24,6 +24,9 @@ interface Penjualan {
   pelanggan: { nama: string };
   diskon: string;
   total_harga: string;
+  penyesuaian: string;
+  total_bayar: string;
+  kembalian: string;
   tanggal_penjualan: Date;
 }
 
@@ -42,6 +45,9 @@ interface FormData {
   id_pelanggan: string;
   diskon: string;
   total_harga: string;
+  penyesuaian: string;
+  total_bayar: string;
+  kembalian: string;
   tanggal_penjualan: string;
 }
 
@@ -106,6 +112,9 @@ export default function PenjualanPage() {
     id_pelanggan: "",
     diskon: "",
     total_harga: "",
+    penyesuaian: "0",
+    total_bayar: "",
+    kembalian: "0",
     tanggal_penjualan: new Date().toISOString(),
   });
 
@@ -228,15 +237,49 @@ export default function PenjualanPage() {
       return total + (produk ? produk.harga_jual * item.quantity : 0);
     }, 0);
 
-    const diskon = isPelanggan ? totalHargaSebelumDiskon * 0.1 : 0;
-    const totalSetelahDiskon = totalHargaSebelumDiskon - diskon;
+    const diskon = isPelanggan ? Math.round(totalHargaSebelumDiskon * 0.1) : 0;
+    const penyesuaian = parseCurrency(formData.penyesuaian);
+
+    const totalSetelahDiskon = totalHargaSebelumDiskon - diskon + penyesuaian;
 
     setFormData((prev) => ({
       ...prev,
-      total_harga: totalSetelahDiskon.toFixed(2),
-      diskon: diskon.toFixed(2),
+      total_harga: Math.round(totalSetelahDiskon).toString(),
+      diskon: diskon.toString(),
     }));
-  }, [selectedProduk, isPelanggan, produkOptions]);
+  }, [selectedProduk, isPelanggan, produkOptions, formData.penyesuaian]);
+
+  const parseCurrency = (value: string) => {
+    if (!value) return 0;
+    return parseInt(value.replace(/\D/g, ""), 10) || 0;
+  };
+
+  useEffect(() => {
+    if (
+      formData.total_harga ||
+      formData.diskon ||
+      formData.penyesuaian ||
+      formData.total_bayar
+    ) {
+      const totalHarga = parseCurrency(formData.total_harga);
+      const penyesuaian = parseCurrency(formData.penyesuaian);
+      const totalBayar = parseCurrency(formData.total_bayar);
+
+      const finalTotal = totalHarga + penyesuaian;
+
+      const kembalian = totalBayar >= finalTotal ? totalBayar - finalTotal : 0;
+
+      setFormData((prev) => ({
+        ...prev,
+        kembalian: kembalian.toString(),
+      }));
+    }
+  }, [
+    formData.total_harga,
+    formData.diskon,
+    formData.penyesuaian,
+    formData.total_bayar,
+  ]);
 
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
@@ -310,6 +353,9 @@ export default function PenjualanPage() {
         : "",
       diskon: penjualan.diskon || "",
       total_harga: penjualan.total_harga || "",
+      penyesuaian: penjualan.penyesuaian || "0",
+      total_bayar: penjualan.total_bayar || "",
+      kembalian: penjualan.kembalian || "0",
       tanggal_penjualan: formattedDate,
     });
 
@@ -391,6 +437,18 @@ export default function PenjualanPage() {
         "total_harga",
         String(parseInt(formData.total_harga || "0", 10))
       );
+      submitData.append(
+        "penyesuaian",
+        String(parseInt(formData.penyesuaian || "0", 10))
+      );
+      submitData.append(
+        "total_bayar",
+        String(parseInt(formData.total_bayar || "0", 10))
+      );
+      submitData.append(
+        "kembalian",
+        String(parseInt(formData.kembalian || "0", 10))
+      );
 
       submitData.append("tanggal_penjualan", formData.tanggal_penjualan);
       submitData.append("selectedProduk", JSON.stringify(selectedProduk));
@@ -425,6 +483,9 @@ export default function PenjualanPage() {
       id_pelanggan: "",
       diskon: "",
       total_harga: "",
+      penyesuaian: "0",
+      total_bayar: "",
+      kembalian: "0",
       tanggal_penjualan: new Date().toISOString(),
     });
     setSelectedProduk([]);
@@ -448,17 +509,25 @@ export default function PenjualanPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-    const rawValue = value.replace(/\D/g, "");
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: rawValue,
-    }));
+    if (
+      ["diskon", "total_harga", "penyesuaian", "total_bayar"].includes(name)
+    ) {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value.replace(/\D/g, ""),
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
   const formatCurrency = (value: string) => {
     if (!value) return "";
-    return new Intl.NumberFormat("id-ID").format(Number(value));
+    const numericValue = value.replace(/\D/g, "");
+    return new Intl.NumberFormat("id-ID").format(Number(numericValue));
   };
 
   return (
@@ -852,6 +921,67 @@ export default function PenjualanPage() {
                         value={formatCurrency(formData.total_harga)}
                         onChange={handleChange}
                         required
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* New fields */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 z-10">
+                  <div>
+                    <label className="block text-gray-700 font-medium text-sm">
+                      Penyesuaian
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-700">
+                        Rp
+                      </span>
+                      <input
+                        type="text"
+                        name="penyesuaian"
+                        className="border rounded-lg p-2 w-full pl-10 mt-1"
+                        placeholder="Masukkan penyesuaian"
+                        value={formatCurrency(formData.penyesuaian || "0")}
+                        onChange={handleChange}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-gray-700 font-medium text-sm">
+                      Total Bayar
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-700">
+                        Rp
+                      </span>
+                      <input
+                        type="text"
+                        name="total_bayar"
+                        className="border rounded-lg p-2 w-full pl-10 mt-1"
+                        placeholder="Masukkan total bayar"
+                        value={formatCurrency(formData.total_bayar || "0")}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-gray-700 font-medium text-sm">
+                      Kembalian
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-700">
+                        Rp
+                      </span>
+                      <input
+                        type="text"
+                        name="kembalian"
+                        className="border rounded-lg p-2 w-full pl-10 mt-1"
+                        placeholder="Kembalian"
+                        value={formatCurrency(formData.kembalian || "0")}
+                        readOnly
                       />
                     </div>
                   </div>
