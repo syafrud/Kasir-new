@@ -39,6 +39,7 @@ export async function createPenjualan(formdata: FormData) {
         total_bayar: new Prisma.Decimal(total_bayar),
         kembalian: new Prisma.Decimal(kembalian),
         tanggal_penjualan: new Date(tanggal_penjualan),
+        isDeleted: false,
       },
     });
 
@@ -49,7 +50,7 @@ export async function createPenjualan(formdata: FormData) {
         where: { id: item.id },
       });
 
-      if (!produk) {
+      if (!produk || produk.isDeleted) {
         throw new Error(`Produk dengan ID ${item.id} tidak ditemukan`);
       }
 
@@ -77,6 +78,7 @@ export async function createPenjualan(formdata: FormData) {
             produk!.harga_jual.toNumber() * item.quantity
           ),
           tanggal_penjualan: new Date(tanggal_penjualan),
+          isDeleted: false,
         },
       });
 
@@ -92,6 +94,7 @@ export async function createPenjualan(formdata: FormData) {
           id_produk: item.id,
           stockIN: 0,
           stockOut: item.quantity,
+          isDeleted: false,
         },
       });
     }
@@ -111,8 +114,16 @@ export async function updatePenjualan(formdata: FormData, id: number) {
   const selectedProduk = JSON.parse(formdata.get("selectedProduk") as string);
 
   await prisma.$transaction(async (prisma) => {
+    const existingPenjualan = await prisma.penjualan.findUnique({
+      where: { id, isDeleted: false },
+    });
+
+    if (!existingPenjualan) {
+      throw new Error(`Penjualan dengan ID ${id} tidak ditemukan`);
+    }
+
     const oldDetails = await prisma.detail_penjualan.findMany({
-      where: { id_penjualan: id },
+      where: { id_penjualan: id, isDeleted: false },
     });
 
     for (const oldItem of oldDetails) {
@@ -124,15 +135,20 @@ export async function updatePenjualan(formdata: FormData, id: number) {
       });
     }
 
-    await prisma.detail_penjualan.deleteMany({
-      where: { id_penjualan: id },
+    // Soft delete old detail_penjualan
+    await prisma.detail_penjualan.updateMany({
+      where: { id_penjualan: id, isDeleted: false },
+      data: {
+        isDeleted: true,
+        deletedAt: new Date(),
+      },
     });
 
     const produkTidakCukup: string[] = [];
 
     for (const item of selectedProduk) {
       const produk = await prisma.produk.findUnique({
-        where: { id: item.id },
+        where: { id: item.id, isDeleted: false },
       });
 
       if (!produk) {
@@ -177,6 +193,7 @@ export async function updatePenjualan(formdata: FormData, id: number) {
             produk!.harga_jual.toNumber() * item.quantity
           ),
           tanggal_penjualan: new Date(tanggal_penjualan),
+          isDeleted: false,
         },
       });
 
@@ -192,6 +209,7 @@ export async function updatePenjualan(formdata: FormData, id: number) {
           id_produk: item.id,
           stockIN: 0,
           stockOut: item.quantity,
+          isDeleted: false,
         },
       });
     }
@@ -200,8 +218,16 @@ export async function updatePenjualan(formdata: FormData, id: number) {
 
 export async function deletePenjualan(id: number) {
   await prisma.$transaction(async (prisma) => {
+    const existingPenjualan = await prisma.penjualan.findUnique({
+      where: { id, isDeleted: false },
+    });
+
+    if (!existingPenjualan) {
+      throw new Error(`Penjualan dengan ID ${id} tidak ditemukan`);
+    }
+
     const details = await prisma.detail_penjualan.findMany({
-      where: { id_penjualan: id },
+      where: { id_penjualan: id, isDeleted: false },
     });
 
     for (const detail of details) {
@@ -215,16 +241,69 @@ export async function deletePenjualan(id: number) {
           id_produk: detail.id_produk,
           stockIN: detail.qty,
           stockOut: 0,
+          isDeleted: false,
+        },
+      });
+
+      // Soft delete detail_penjualan
+      await prisma.detail_penjualan.update({
+        where: { id: detail.id },
+        data: {
+          isDeleted: true,
+          deletedAt: new Date(),
         },
       });
     }
 
-    await prisma.detail_penjualan.deleteMany({
+    // Soft delete penjualan
+    await prisma.penjualan.update({
+      where: { id },
+      data: {
+        isDeleted: true,
+        deletedAt: new Date(),
+      },
+    });
+  });
+}
+
+export async function restorePenjualan(id: number) {
+  await prisma.$transaction(async (prisma) => {
+    const existingPenjualan = await prisma.penjualan.findUnique({
+      where: { id, isDeleted: true },
+    });
+
+    if (!existingPenjualan) {
+      throw new Error(`Penjualan dengan ID ${id} tidak ditemukan`);
+    }
+
+    // Restore penjualan
+    await prisma.penjualan.update({
+      where: { id },
+      data: {
+        isDeleted: false,
+        deletedAt: null,
+      },
+    });
+
+    // Restore associated detail_penjualan
+    await prisma.detail_penjualan.updateMany({
+      where: { id_penjualan: id, isDeleted: true },
+      data: {
+        isDeleted: false,
+        deletedAt: null,
+      },
+    });
+
+    // Adjust stock when restoring
+    const details = await prisma.detail_penjualan.findMany({
       where: { id_penjualan: id },
     });
 
-    await prisma.penjualan.delete({
-      where: { id },
-    });
+    for (const detail of details) {
+      await prisma.produk.update({
+        where: { id: detail.id_produk },
+        data: { stok: { decrement: detail.qty } },
+      });
+    }
   });
 }

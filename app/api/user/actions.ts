@@ -34,6 +34,7 @@ export async function createUser(formdata: FormData) {
       alamat: formdata.get("alamat") as string,
       hp: formdata.get("hp") as string,
       status: formdata.get("status") as string,
+      isDeleted: false,
     },
   });
 }
@@ -49,10 +50,21 @@ export async function updateUser(formdata: FormData, id: number) {
   const password = formdata.get("password") as string;
   const hashed = await hash(password, 12);
 
+  // Check if user exists and is not deleted
+  const user = await prisma.users.findUnique({
+    where: { id, isDeleted: false },
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // Check if username is already taken by another user
   const existingUser = await prisma.users.findFirst({
     where: {
       username,
       id: { not: id },
+      isDeleted: false,
     },
   });
 
@@ -75,7 +87,41 @@ export async function updateUser(formdata: FormData, id: number) {
 }
 
 export async function deleteUser(id: number) {
-  await prisma.users.delete({
+  // Check if user exists and is not already deleted
+  const user = await prisma.users.findUnique({
+    where: { id, isDeleted: false },
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // Soft delete the user
+  await prisma.users.update({
     where: { id },
+    data: {
+      isDeleted: true,
+      deletedAt: new Date(),
+    },
+  });
+}
+
+export async function restoreUser(id: number) {
+  // Check if user exists and is deleted
+  const user = await prisma.users.findUnique({
+    where: { id, isDeleted: true },
+  });
+
+  if (!user) {
+    throw new Error("Deleted user not found");
+  }
+
+  // Restore the user
+  await prisma.users.update({
+    where: { id },
+    data: {
+      isDeleted: false,
+      deletedAt: null,
+    },
   });
 }

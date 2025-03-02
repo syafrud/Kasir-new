@@ -9,24 +9,27 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "5");
     const skip = (page - 1) * limit;
 
+    const showDeleted = searchParams.get("showDeleted") === "true";
+
+    const baseCondition = search
+      ? {
+          nama: {
+            contains: search.trim().toLowerCase(),
+          },
+        }
+      : {};
+
+    const whereCondition = {
+      ...baseCondition,
+      ...(showDeleted ? {} : { isDeleted: false }),
+    };
+
     const totalCount = await prisma.pelanggan.count({
-      where: search
-        ? {
-            nama: {
-              contains: search.trim().toLowerCase(),
-            },
-          }
-        : undefined,
+      where: whereCondition,
     });
 
     const pelanggan = await prisma.pelanggan.findMany({
-      where: search
-        ? {
-            nama: {
-              contains: search.trim().toLowerCase(),
-            },
-          }
-        : undefined,
+      where: whereCondition,
       orderBy: { id: "asc" },
       skip,
       take: limit,
@@ -45,6 +48,37 @@ export async function GET(request: NextRequest) {
     console.error("Prisma error:", error);
     return NextResponse.json(
       { error: "Database query failed" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const requestData = await request.json();
+    const { id, action } = requestData;
+
+    if (!id) {
+      return NextResponse.json({ error: "ID is required" }, { status: 400 });
+    }
+
+    if (action === "restore") {
+      await prisma.pelanggan.update({
+        where: { id },
+        data: {
+          isDeleted: false,
+          deletedAt: null,
+        },
+      });
+
+      return NextResponse.json({ message: "Customer restored successfully" });
+    }
+
+    return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+  } catch (error) {
+    console.error("Prisma error:", error);
+    return NextResponse.json(
+      { error: "Failed to process request" },
       { status: 500 }
     );
   }

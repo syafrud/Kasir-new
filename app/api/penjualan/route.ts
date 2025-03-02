@@ -12,21 +12,25 @@ export async function GET(request: NextRequest) {
     const endDate = searchParams.get("endDate");
     const minTotal = searchParams.get("minTotal");
     const maxTotal = searchParams.get("maxTotal");
+    const showDeleted = searchParams.get("showDeleted") === "true";
 
     let whereClause: any = {};
 
+    // Base soft delete condition
+    if (!showDeleted) {
+      whereClause.isDeleted = false;
+    }
+
     if (search) {
-      whereClause = {
-        OR: [
-          {
-            users: {
-              nama_user: {
-                contains: search.trim(),
-              },
+      whereClause.OR = [
+        {
+          users: {
+            nama_user: {
+              contains: search.trim(),
             },
           },
-        ],
-      };
+        },
+      ];
     }
 
     if (startDate || endDate) {
@@ -83,6 +87,39 @@ export async function GET(request: NextRequest) {
     console.error("API Error:", error);
     return NextResponse.json(
       { error: "Failed to fetch penjualan data" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const requestData = await request.json();
+    const { id, action } = requestData;
+
+    if (!id) {
+      return NextResponse.json({ error: "ID is required" }, { status: 400 });
+    }
+
+    if (action === "restore") {
+      await prisma.penjualan.update({
+        where: { id },
+        data: {
+          isDeleted: false,
+          deletedAt: null,
+        },
+      });
+
+      return NextResponse.json({
+        message: "Sale record restored successfully",
+      });
+    }
+
+    return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+  } catch (error) {
+    console.error("Prisma error:", error);
+    return NextResponse.json(
+      { error: "Failed to process request" },
       { status: 500 }
     );
   }

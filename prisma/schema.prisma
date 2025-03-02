@@ -19,28 +19,32 @@ datasource db {
 // }
 
 model detail_penjualan {
-  id                Int      @id @default(autoincrement())
+  id                Int       @id @default(autoincrement())
   id_penjualan      Int
   id_produk         Int
   harga_jual        Decimal
   qty               Int
   total_harga       Decimal
   tanggal_penjualan DateTime
+  isDeleted         Boolean   @default(false)
+  deletedAt         DateTime?
 
   penjualan penjualan @relation(fields: [id_penjualan], references: [id])
   produk    produk    @relation(fields: [id_produk], references: [id])
 }
 
 model penjualan {
-  id                Int      @id @default(autoincrement())
+  id                Int       @id @default(autoincrement())
   id_user           Int
   id_pelanggan      Int?
   diskon            Decimal
   total_harga       Decimal
-  penyesuaian       Decimal  @default(0)
+  penyesuaian       Decimal   @default(0)
   total_bayar       Decimal
-  kembalian         Decimal  @default(0)
+  kembalian         Decimal   @default(0)
   tanggal_penjualan DateTime
+  isDeleted         Boolean   @default(false)
+  deletedAt         DateTime?
 
   detail_penjualan detail_penjualan[]
   users            users              @relation(fields: [id_user], references: [id])
@@ -48,16 +52,18 @@ model penjualan {
 }
 
 model produk {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   id_kategori Int
   nama_produk String
   harga_beli  Decimal
   harga_jual  Decimal
   stok        Int
   image       String
-  barcode     String   @unique
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  barcode     String    @unique
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+  isDeleted   Boolean   @default(false)
+  deletedAt   DateTime?
 
   detail_penjualan detail_penjualan[]
   kategori         kategori           @relation(fields: [id_kategori], references: [id], onDelete: Cascade)
@@ -65,43 +71,52 @@ model produk {
 }
 
 model stok_management {
-  id        Int    @id @default(autoincrement())
+  id        Int       @id @default(autoincrement())
   id_produk Int
   stockIN   Int
   stockOut  Int
-  produk    produk @relation(fields: [id_produk], references: [id], onDelete: Cascade)
+  isDeleted Boolean   @default(false)
+  deletedAt DateTime?
+
+  produk produk @relation(fields: [id_produk], references: [id], onDelete: Cascade)
 }
 
 model kategori {
-  id            Int    @id @default(autoincrement())
+  id            Int       @id @default(autoincrement())
   nama_kategori String
+  isDeleted     Boolean   @default(false)
+  deletedAt     DateTime?
 
   produk produk[]
 }
 
 model pelanggan {
-  id         Int      @id @default(autoincrement())
-  nama       String   @unique
+  id         Int       @id @default(autoincrement())
+  nama       String    @unique
   alamat     String
   hp         String
   status     String
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  isDeleted  Boolean   @default(false)
+  deletedAt  DateTime?
 
   penjualan penjualan[]
 }
 
 model users {
-  id         Int      @id @default(autoincrement())
+  id         Int       @id @default(autoincrement())
   nama_user  String
-  username   String   @unique
+  username   String    @unique
   password   String
-  user_priv  UserRole @default(PETUGAS)
+  user_priv  UserRole  @default(PETUGAS)
   alamat     String
   hp         String
   status     String
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  isDeleted  Boolean   @default(false)
+  deletedAt  DateTime?
 
   penjualan penjualan[]
 }

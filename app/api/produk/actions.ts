@@ -1,6 +1,6 @@
 "use server";
 
-import prisma from "@/lib/db";
+import prisma, { softDelete, restoreSoftDelete } from "@/lib/db";
 import { Prisma } from "@prisma/client";
 import { writeFile, unlink, mkdir } from "fs/promises";
 import { existsSync } from "fs";
@@ -27,8 +27,11 @@ export async function createProduk(formdata: FormData) {
 
   await writeFile(filepath, buffer);
 
-  const existingBarcode = await prisma.produk.findUnique({
-    where: { barcode },
+  const existingBarcode = await prisma.produk.findFirst({
+    where: {
+      barcode,
+      isDeleted: false,
+    },
   });
 
   if (existingBarcode) {
@@ -45,6 +48,7 @@ export async function createProduk(formdata: FormData) {
         stok: Number(formdata.get("stok")),
         barcode,
         image: `/uploads/${filename}`,
+        isDeleted: false,
       },
     });
   }
@@ -56,7 +60,9 @@ export async function updateProduk(formdata: FormData, id: number) {
   const barcode = formdata.get("barcode") as string;
   const file = formdata.get("image") as File | null;
 
-  const existingProduk = await prisma.produk.findUnique({ where: { id } });
+  const existingProduk = await prisma.produk.findUnique({
+    where: { id },
+  });
 
   if (!existingProduk) {
     throw new Error("Produk tidak ditemukan");
@@ -90,7 +96,11 @@ export async function updateProduk(formdata: FormData, id: number) {
   }
 
   const existingBarcode = await prisma.produk.findFirst({
-    where: { barcode, id: { not: id } },
+    where: {
+      barcode,
+      id: { not: id },
+      isDeleted: false,
+    },
   });
 
   if (existingBarcode) {
@@ -111,7 +121,7 @@ export async function updateProduk(formdata: FormData, id: number) {
   });
 }
 
-export async function deleteProduk(id: number) {
+export async function hardDeleteProduk(id: number) {
   const product = await prisma.produk.findUnique({ where: { id } });
 
   if (product && product.image) {
@@ -130,6 +140,14 @@ export async function deleteProduk(id: number) {
   });
 }
 
+export async function deleteProduk(id: number) {
+  await softDelete(prisma.produk, id);
+}
+
+export async function restoreProduk(id: number) {
+  await restoreSoftDelete(prisma.produk, id);
+}
+
 export async function adjustStock({
   productId,
   amount,
@@ -145,6 +163,10 @@ export async function adjustStock({
 
   if (!product) {
     throw new Error("Product not found");
+  }
+
+  if (product.isDeleted) {
+    throw new Error("Cannot adjust stock for deleted product");
   }
 
   await prisma.$transaction(async (tx) => {

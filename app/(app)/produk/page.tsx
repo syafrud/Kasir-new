@@ -260,6 +260,7 @@ export default function ProdukPage() {
       setAdjustmentType("+");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Unknown error");
+      console.log(error);
     }
   };
 
