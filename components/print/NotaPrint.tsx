@@ -35,7 +35,6 @@ export const NotaPrint = async (id: number) => {
       return;
     }
 
-    // Prepare the print content
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
@@ -160,9 +159,7 @@ export const NotaPrint = async (id: number) => {
           </div>
           
           <script>
-            // Wait for all resources to load before printing
             window.onload = function() {
-              // Small delay to ensure styles are applied
               setTimeout(() => {
                 window.print();
                 setTimeout(() => window.close(), 500);

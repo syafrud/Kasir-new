@@ -16,7 +16,6 @@ export async function GET(request: NextRequest) {
 
     let whereClause: any = {};
 
-    // Base soft delete condition
     if (!showDeleted) {
       whereClause.isDeleted = false;
     }

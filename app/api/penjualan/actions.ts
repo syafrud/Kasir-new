@@ -135,7 +135,6 @@ export async function updatePenjualan(formdata: FormData, id: number) {
       });
     }
 
-    // Soft delete old detail_penjualan
     await prisma.detail_penjualan.updateMany({
       where: { id_penjualan: id, isDeleted: false },
       data: {
@@ -245,7 +244,6 @@ export async function deletePenjualan(id: number) {
         },
       });
 
-      // Soft delete detail_penjualan
       await prisma.detail_penjualan.update({
         where: { id: detail.id },
         data: {
@@ -255,7 +253,6 @@ export async function deletePenjualan(id: number) {
       });
     }
 
-    // Soft delete penjualan
     await prisma.penjualan.update({
       where: { id },
       data: {
@@ -276,7 +273,6 @@ export async function restorePenjualan(id: number) {
       throw new Error(`Penjualan dengan ID ${id} tidak ditemukan`);
     }
 
-    // Restore penjualan
     await prisma.penjualan.update({
       where: { id },
       data: {
@@ -285,7 +281,6 @@ export async function restorePenjualan(id: number) {
       },
     });
 
-    // Restore associated detail_penjualan
     await prisma.detail_penjualan.updateMany({
       where: { id_penjualan: id, isDeleted: true },
       data: {
@@ -294,7 +289,6 @@ export async function restorePenjualan(id: number) {
       },
     });
 
-    // Adjust stock when restoring
     const details = await prisma.detail_penjualan.findMany({
       where: { id_penjualan: id },
     });

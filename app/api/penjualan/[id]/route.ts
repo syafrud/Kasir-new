@@ -3,7 +3,7 @@ import prisma from "@/lib/db";
 
 export async function GET(request: NextRequest) {
   try {
-    const id = request.nextUrl.pathname.split("/").pop(); // Ambil ID dari URL
+    const id = request.nextUrl.pathname.split("/").pop();
 
     if (!id || isNaN(Number(id))) {
       return NextResponse.json(

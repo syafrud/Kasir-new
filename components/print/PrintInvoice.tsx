@@ -1,4 +1,3 @@
-// Define types for the data structure
 interface Produk {
   nama_produk: string;
 }
@@ -38,7 +37,6 @@ export const PrintInvoice = async (id: number) => {
       return;
     }
 
-    // Prepare the print content
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
@@ -232,9 +230,7 @@ export const PrintInvoice = async (id: number) => {
           </div>
           
           <script>
-            // Wait for all resources to load before printing
             window.onload = function() {
-              // Small delay to ensure styles are applied
               setTimeout(() => {
                 window.print();
                 setTimeout(() => window.close(), 500);

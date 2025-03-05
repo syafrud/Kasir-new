@@ -138,6 +138,24 @@ export default function DashboardLayout({
               isExpanded={isSidebarExpanded || isHovering}
             />
           </Accordion>
+          <Accordion
+            title="Laporan"
+            icon={<Package size={20} />}
+            isExpanded={isSidebarExpanded || isHovering}
+          >
+            <SidebarALink
+              href="/laporan"
+              icon={<Boxes size={20} />}
+              label="Laporan Penjualan"
+              isExpanded={isSidebarExpanded || isHovering}
+            />
+            <SidebarALink
+              href="/laporan/per-item"
+              icon={<Tags size={20} />}
+              label="Laporan Penjualan Per Item"
+              isExpanded={isSidebarExpanded || isHovering}
+            />
+          </Accordion>
           <SidebarLink
             href="/pelanggan"
             icon={<Users size={20} />}
