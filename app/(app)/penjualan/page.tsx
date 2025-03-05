@@ -424,6 +424,23 @@ export default function PenjualanPage() {
       return;
     }
 
+    const totalBayar = parseInt(formData.total_bayar || "0", 10);
+    const totalHarga = parseInt(formData.total_harga || "0", 10);
+
+    if (totalBayar === 0) {
+      toast.error(
+        "Total bayar tidak boleh 0. Silakan masukkan jumlah pembayaran."
+      );
+      return;
+    }
+
+    if (totalBayar < totalHarga) {
+      toast.error(
+        "Total bayar kurang dari total harga. Silakan masukkan pembayaran yang cukup."
+      );
+      return;
+    }
+
     try {
       const submitData = new FormData();
 
