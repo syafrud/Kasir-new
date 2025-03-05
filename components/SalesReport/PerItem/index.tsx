@@ -201,7 +201,6 @@ const PerItemSalesReport = () => {
           end: endOfYear(today),
         };
       case "custom":
-        // Ensure start date is not after end date and not in the future
         const start =
           customDateRange.start > today ? today : customDateRange.start;
         const end = customDateRange.end > today ? today : customDateRange.end;
@@ -243,7 +242,6 @@ const PerItemSalesReport = () => {
       );
     } catch (error) {
       console.error("Error fetching sales data:", error);
-      // Reset data on error
       setSalesData([]);
       setTotalItems(0);
       setSummary({

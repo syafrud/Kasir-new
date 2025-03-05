@@ -16,19 +16,44 @@ function formatPesanProdukTidakCukup(produkList: string[]): string {
   }
 }
 
-export async function createPenjualan(formdata: FormData) {
-  const diskon = formdata.get("diskon") as string;
-  const total_harga = formdata.get("total_harga") as string;
-  const penyesuaian = (formdata.get("penyesuaian") as string) || "0";
-  const total_bayar = formdata.get("total_bayar") as string;
-  const kembalian = (formdata.get("kembalian") as string) || "0";
-  const id_user = Number(formdata.get("id_user"));
-  const id_pelanggan_raw = formdata.get("id_pelanggan") as string;
-  const id_pelanggan = id_pelanggan_raw ? Number(id_pelanggan_raw) : null;
-  const tanggal_penjualan = formdata.get("tanggal_penjualan") as string;
-  const selectedProduk = JSON.parse(formdata.get("selectedProduk") as string);
+function convertDecimalToNumber(obj: any) {
+  const convertedObj = { ...obj };
 
-  await prisma.$transaction(async (prisma) => {
+  const decimalFields = [
+    "diskon",
+    "total_harga",
+    "penyesuaian",
+    "total_bayar",
+    "kembalian",
+    "harga_jual",
+    "total_harga",
+  ];
+
+  decimalFields.forEach((field) => {
+    if (
+      convertedObj[field] &&
+      typeof convertedObj[field].toNumber === "function"
+    ) {
+      convertedObj[field] = convertedObj[field].toNumber();
+    }
+  });
+
+  return convertedObj;
+}
+
+export async function createPenjualan(formdata: FormData) {
+  return await prisma.$transaction(async (prisma) => {
+    const diskon = formdata.get("diskon") as string;
+    const total_harga = formdata.get("total_harga") as string;
+    const penyesuaian = (formdata.get("penyesuaian") as string) || "0";
+    const total_bayar = formdata.get("total_bayar") as string;
+    const kembalian = (formdata.get("kembalian") as string) || "0";
+    const id_user = Number(formdata.get("id_user"));
+    const id_pelanggan_raw = formdata.get("id_pelanggan") as string;
+    const id_pelanggan = id_pelanggan_raw ? Number(id_pelanggan_raw) : null;
+    const tanggal_penjualan = formdata.get("tanggal_penjualan") as string;
+    const selectedProduk = JSON.parse(formdata.get("selectedProduk") as string);
+
     const penjualan = await prisma.penjualan.create({
       data: {
         id_user,
@@ -98,6 +123,8 @@ export async function createPenjualan(formdata: FormData) {
         },
       });
     }
+
+    return convertDecimalToNumber(penjualan);
   });
 }
 

@@ -1,6 +1,6 @@
 "use client";
 import SidebarLink from "@/components/ui/link";
-import "../globals.css";
+import "../../globals.css";
 import {
   LogOut,
   User,
@@ -15,8 +15,8 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
-import { LogoutButton } from "../auth";
-import { Providers } from "../providers";
+import { LogoutButton } from "../../auth";
+import { Providers } from "../../providers";
 import { Toaster } from "react-hot-toast";
 import { Accordion } from "@/components/ui/accordion";
 import SidebarALink from "@/components/ui/link/accordion";

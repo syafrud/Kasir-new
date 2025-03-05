@@ -9,8 +9,13 @@ export async function middleware(req: NextRequest) {
   const publicPaths = ["/login", "/api"];
 
   const roleBasedPaths: Record<string, string[]> = {
-    "/admin": ["ADMIN"],
-    "/dashboard": ["ADMIN", "PETUGAS"],
+    "/penjualan": ["ADMIN"],
+    "/produk": ["ADMIN"],
+    "/kategori-produk": ["ADMIN"],
+    "/laporan": ["ADMIN"],
+    "/pelanggan": ["ADMIN"],
+    "/users": ["ADMIN"],
+    "/pos": ["ADMIN", "PETUGAS"],
   };
 
   const isAppRoute =
@@ -27,11 +32,18 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/", req.url));
   }
 
-  if (token && roleBasedPaths[path]) {
-    const allowedRoles = roleBasedPaths[path];
-    const userRole = (token as { role: string }).role;
-    if (!allowedRoles.includes(userRole)) {
-      return NextResponse.redirect(new URL("/", req.url));
+  if (token) {
+    const matchedPath = Object.keys(roleBasedPaths).find((routePath) =>
+      path.startsWith(routePath)
+    );
+
+    if (matchedPath) {
+      const allowedRoles = roleBasedPaths[matchedPath];
+      const userRole = (token as { role: string }).role;
+
+      if (!allowedRoles.includes(userRole)) {
+        return NextResponse.redirect(new URL("/", req.url));
+      }
     }
   }
 
