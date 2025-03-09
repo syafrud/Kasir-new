@@ -47,6 +47,7 @@ export async function GET(request: Request) {
           },
         },
         detail_penjualan: {
+          where: { isDeleted: false },
           include: {
             produk: {
               select: {
@@ -77,17 +78,9 @@ export async function GET(request: Request) {
     });
 
     const formattedSales = sales.map((sale) => {
-      const profit = sale.detail_penjualan.reduce((sum, item) => {
-        const itemProfit =
-          item.qty *
-          (item.harga_jual.toNumber() - item.produk.harga_beli.toNumber());
-        return sum + itemProfit;
+      const subTotal = sale.detail_penjualan.reduce((sum, item) => {
+        return sum + item.qty * item.produk.harga_jual.toNumber();
       }, 0);
-
-      const remainingPayment = Math.max(
-        0,
-        sale.total_harga.toNumber() - sale.total_bayar.toNumber()
-      );
 
       return {
         id: sale.id,
@@ -97,12 +90,12 @@ export async function GET(request: Request) {
         )}`,
         tgl_invoice: format(sale.tanggal_penjualan, "dd-MM-yyyy"),
         nama_customer: sale.pelanggan?.nama || "",
-        sub_total: sale.total_harga.toNumber(),
+        sub_total: subTotal,
         diskon: sale.diskon.toNumber(),
         neto: sale.total_harga.toNumber(),
-        untung: profit,
-        kurang_bayar: remainingPayment,
-        status: remainingPayment > 0 ? "kurang_bayar" : "lunas",
+        bayar: sale.total_bayar.toNumber(),
+        kembalian: sale.kembalian.toNumber(),
+        penyesuaian: sale.penyesuaian.toNumber(),
       };
     });
 

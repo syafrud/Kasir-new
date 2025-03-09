@@ -209,7 +209,7 @@ export default function SalesPage() {
       formData.append("id_pelanggan", selectedCustomer?.id.toString() || "");
       formData.append("tanggal_penjualan", new Date().toISOString());
       formData.append(
-        "edProduk",
+        "selectedProduk",
         JSON.stringify(
           selectedProducts.map((product) => ({
             id: product.id,

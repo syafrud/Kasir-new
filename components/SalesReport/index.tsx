@@ -1,6 +1,14 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { format } from "date-fns";
+import {
+  format,
+  startOfDay,
+  endOfDay,
+  startOfMonth,
+  endOfMonth,
+  startOfYear,
+  endOfYear,
+} from "date-fns";
 import { saveAs } from "file-saver";
 import * as XLSX from "xlsx";
 import {
@@ -178,37 +186,44 @@ const SalesReport = () => {
 
   const getDateRange = (): DateRange => {
     const today = new Date();
-    let start = new Date();
-    let end = new Date();
 
     switch (dateOption) {
       case "today":
-        break;
-      case "month":
-        start = new Date(today.getFullYear(), today.getMonth(), 1);
-        end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-        break;
-      case "year":
-        start = new Date(today.getFullYear(), 0, 1);
-        end = new Date(today.getFullYear(), 11, 31);
-        break;
-      case "custom":
         return {
-          start: customDateRange.start > today ? today : customDateRange.start,
-          end: customDateRange.end > today ? today : customDateRange.end,
+          start: startOfDay(today),
+          end: endOfDay(today),
+        };
+      case "month":
+        return {
+          start: startOfMonth(today),
+          end: endOfMonth(today),
+        };
+      case "year":
+        return {
+          start: startOfYear(today),
+          end: endOfYear(today),
+        };
+      case "custom":
+        const start =
+          customDateRange.start > today ? today : customDateRange.start;
+        const end = customDateRange.end > today ? today : customDateRange.end;
+
+        return {
+          start: start > end ? end : start,
+          end: end,
         };
       default:
-        break;
+        return {
+          start: today,
+          end: today,
+        };
     }
-
-    return { start, end };
   };
 
   const fetchSalesData = async () => {
     try {
       setLoading(true);
       const dateRange = getDateRange();
-
       const response = await axios.get("/api/sales", {
         params: {
           startDate: format(dateRange.start, "yyyy-MM-dd"),
@@ -219,20 +234,26 @@ const SalesReport = () => {
         },
       });
 
-      setSalesData(response.data.sales);
-      setTotalItems(response.data.total);
+      if (Array.isArray(response.data.sales)) {
+        setSalesData(response.data.sales);
+      } else {
+        setSalesData([]);
+      }
 
+      setTotalItems(response.data.total || 0);
       if (response.data.customers) {
         setCustomers(["Semua", ...response.data.customers]);
       }
     } catch (error) {
       console.error("Error fetching sales data:", error);
+      setSalesData([]);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    setSalesData([]);
     fetchSalesData();
   }, [dateOption, customDateRange, currentPage, customerFilter]);
 
@@ -344,7 +365,10 @@ const SalesReport = () => {
             <select
               className="w-full p-2 border rounded"
               value={dateOption}
-              onChange={(e) => handleDateOptionChange(e.target.value)}
+              onChange={(e) => {
+                setDateOption(e.target.value);
+                setCurrentPage(1);
+              }}
             >
               <option value="today">Hari Ini</option>
               <option value="month">Bulan Ini</option>
@@ -361,7 +385,10 @@ const SalesReport = () => {
                 value={format(customDateRange.start, "yyyy-MM-dd")}
                 max={format(new Date(), "yyyy-MM-dd")}
                 onChange={(e) =>
-                  handleCustomDateChange("start", e.target.value)
+                  setCustomDateRange((prev) => ({
+                    ...prev,
+                    start: new Date(e.target.value),
+                  }))
                 }
               />
               <span>s.d.</span>
@@ -370,7 +397,12 @@ const SalesReport = () => {
                 className="p-2 border rounded"
                 value={format(customDateRange.end, "yyyy-MM-dd")}
                 max={format(new Date(), "yyyy-MM-dd")}
-                onChange={(e) => handleCustomDateChange("end", e.target.value)}
+                onChange={(e) =>
+                  setCustomDateRange((prev) => ({
+                    ...prev,
+                    end: new Date(e.target.value),
+                  }))
+                }
               />
             </div>
           )}

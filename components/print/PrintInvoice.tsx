@@ -68,7 +68,7 @@ export const PrintInvoice = async (id: number) => {
                   KURANG
                 </div>
                 <div class="border border-black p-1">
-                  <div class="text-center">0005/INV/IK/${new Date().getFullYear()}</div>
+                  <div class="text-center">0005/INV/${new Date().getFullYear()}</div>
                 </div>
               </div>
             </div>

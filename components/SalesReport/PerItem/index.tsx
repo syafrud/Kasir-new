@@ -311,6 +311,7 @@ const PerItemSalesReport = () => {
   };
 
   useEffect(() => {
+    setSalesData([]);
     fetchSalesData();
   }, [dateOption, customDateRange, currentPage]);
 

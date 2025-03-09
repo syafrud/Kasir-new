@@ -262,12 +262,9 @@ export default function PenjualanPage() {
       formData.total_bayar
     ) {
       const totalHarga = parseCurrency(formData.total_harga);
-      const penyesuaian = parseCurrency(formData.penyesuaian);
       const totalBayar = parseCurrency(formData.total_bayar);
 
-      const finalTotal = totalHarga + penyesuaian;
-
-      const kembalian = totalBayar >= finalTotal ? totalBayar - finalTotal : 0;
+      const kembalian = totalBayar >= totalHarga ? totalBayar - totalHarga : 0;
 
       setFormData((prev) => ({
         ...prev,
