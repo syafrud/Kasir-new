@@ -84,7 +84,7 @@ export async function GET(request: Request) {
 
       return {
         id: sale.id,
-        no_invoice: `${sale.id.toString().padStart(4, "0")}/INV/IK/${format(
+        no_invoice: `${sale.id.toString().padStart(4, "0")}/INV/${format(
           sale.tanggal_penjualan,
           "yyyy"
         )}`,

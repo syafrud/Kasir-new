@@ -1,22 +1,27 @@
-import React, { ReactNode } from "react";
+// app/(app)/pos/layout.tsx
+import NavigationBar from "@/components/NavigationBar";
+import React from "react";
+import { Toaster } from "react-hot-toast";
 
-interface LayoutProps {
-  children: ReactNode;
-}
-
-const Layout: React.FC<LayoutProps> = ({ children }) => {
+export default function PosLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-screen bg-[#5FBDFF]">
+    <div className="flex h-screen bg-[#5FBDFF] relative transition-all duration-300">
+      <Toaster
+        position="bottom-right"
+        toastOptions={{
+          duration: 5000,
+          removeDelay: 1000,
+          style: {
+            background: "#363636",
+            color: "#fff",
+          },
+        }}
+      />
+
       <div className="w-full flex flex-col">
-        <div className="max-h-[calc(100vh-62px)]">{children}</div>
-        <div className="flex w-full h-16">
-          <button className="w-1/3 bg-orange-500 text-white">Kasir</button>
-          <button className="w-1/3 bg-green-500 text-white">Invoice</button>
-          <button className="w-1/3 bg-blue-500 text-white">Barang</button>
-        </div>
+        <div className="flex-1 max-h-[calc(100vh-64px)]">{children}</div>
+        <NavigationBar />
       </div>
     </div>
   );
-};
-
-export default Layout;
+}

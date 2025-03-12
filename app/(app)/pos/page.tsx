@@ -17,6 +17,7 @@ import { useSession } from "next-auth/react";
 import { NotaPrint } from "@/components/print/NotaPrint";
 import { PrintInvoice } from "@/components/print/PrintInvoice";
 import { createPelanggan } from "@/app/api/pelanggan/actions";
+import toast from "react-hot-toast";
 
 declare module "next-auth" {
   interface Session {
@@ -399,23 +400,28 @@ export default function SalesPage() {
     fetchProductPage(1, newSize);
   };
 
-  const handleBarcodeSearch = async (barcode: number) => {
-    try {
-      const response = await fetch(`/api/produk/barcode/${barcode}`);
+  const handleBarcodeInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const barcode = e.target.value.trim();
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.produk) {
-          addProductToSale(data.produk);
-          setSearchTerm("");
+    if (barcode.length > 11) {
+      try {
+        const response = await fetch(`/api/produk/barcode/${barcode}`);
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.produk) {
+            addProductToSale(data.produk);
+            setSearchTerm("");
+          } else {
+            toast.error(`Produk dengan barcode ${barcode} tidak ditemukan`);
+          }
         } else {
-          alert("Produk dengan barcode tersebut tidak ditemukan");
+          toast.error("Error fetching product by barcode");
         }
-      } else {
-        console.error("Error fetching product by barcode");
+      } catch (error) {
+        toast.error("Gagal mencari produk! Coba lagi.");
+        console.error("Error mencari produk:", error);
       }
-    } catch (error) {
-      console.error("Error in barcode search:", error);
     }
   };
 
@@ -440,15 +446,14 @@ export default function SalesPage() {
             <div className="flex items-center relative flex-1">
               <input
                 type="text"
-                placeholder="Cari Produk/ Barcode..."
+                placeholder="Scan Barcode atau Cari Barang"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && searchTerm.trim()) {
-                    const barcode = parseInt(searchTerm.trim());
-                    if (!isNaN(barcode)) {
-                      handleBarcodeSearch(barcode);
-                    }
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  const input = e.target.value.trim();
+
+                  if (input.length > 11) {
+                    handleBarcodeInput(e);
                   }
                 }}
                 className="w-full pl-10 border-2 p-2"

@@ -66,6 +66,13 @@ export default function ProdukPage() {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [produkToDelete, setProdukToDelete] = useState<number | null>(null);
 
+  const generateBarcode = () => {
+    const barcode = Math.floor(
+      1000000000000 + Math.random() * 9000000000000
+    ).toString();
+    setFormData({ ...formData, barcode });
+  };
+
   const fetchProduk = async () => {
     try {
       const res = await fetch(
@@ -596,15 +603,24 @@ export default function ProdukPage() {
                   <label className="block text-base font-medium text-gray-700">
                     Barcode
                   </label>
-                  <input
-                    type="text"
-                    name="barcode"
-                    placeholder="Barcode"
-                    className="border p-2 rounded w-full mt-2"
-                    value={formData.barcode}
-                    onChange={handleInputChange}
-                    required
-                  />
+                  <div className="flex gap-2 mt-2">
+                    <input
+                      type="text"
+                      name="barcode"
+                      placeholder="Barcode"
+                      className="border p-2 rounded w-full"
+                      value={formData.barcode}
+                      onChange={handleInputChange}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={generateBarcode}
+                      className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                    >
+                      Generate
+                    </button>
+                  </div>
                 </div>
               </div>
 

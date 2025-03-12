@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 
 interface Produk {
   id: number;
@@ -10,14 +11,15 @@ interface Produk {
   image: string;
 }
 
-interface SearchBarProps {
+export default function ProdukSearch({
+  onSelect,
+}: {
   onSelect: (produk: Produk) => void;
-}
-
-export default function SearchBarProduk({ onSelect }: SearchBarProps) {
+}) {
   const [searchTerm, setSearchTerm] = useState("");
   const [produkList, setProdukList] = useState<Produk[]>([]);
   const [loading, setLoading] = useState(false);
+  const [processedBarcode, setProcessedBarcode] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProduk = async () => {
@@ -25,49 +27,86 @@ export default function SearchBarProduk({ onSelect }: SearchBarProps) {
         setProdukList([]);
         return;
       }
-
       setLoading(true);
       try {
         const res = await fetch(`/api/produk?search=${searchTerm}`);
+        if (!res.ok) throw new Error("Gagal mengambil data produk");
         const data = await res.json();
-        console.log(data);
         setProdukList(data.produk);
       } catch (error) {
         console.error("Error fetching produk:", error);
+        toast.error("Gagal mengambil data produk. Silakan coba lagi!");
       } finally {
         setLoading(false);
       }
     };
-
     const debounceFetch = setTimeout(fetchProduk, 300);
     return () => clearTimeout(debounceFetch);
   }, [searchTerm]);
+
+  useEffect(() => {
+    if (searchTerm.length > 11 && !isNaN(parseInt(searchTerm))) {
+      handleBarcodeSearch(searchTerm);
+    }
+  }, [searchTerm]);
+
+  const handleBarcodeSearch = async (barcode: string) => {
+    if (processedBarcode === barcode) return;
+    setProcessedBarcode(barcode);
+
+    try {
+      setSearchTerm("");
+      const response = await fetch(`/api/produk/barcode/${barcode}`);
+      const data = await response.json();
+
+      if (response.ok) {
+        if (data.produk) {
+          onSelect(data.produk);
+        } else {
+          toast.error(`Produk dengan barcode ${barcode} tidak ditemukan`);
+        }
+      } else {
+        switch (response.status) {
+          case 400:
+            toast.error("Barcode wajib diisi!");
+            break;
+          case 404:
+            toast.error("Produk tidak ditemukan");
+            break;
+          case 500:
+            toast.error("Terjadi kesalahan pada server. Coba lagi nanti.");
+            break;
+          default:
+            toast.error("Terjadi kesalahan yang tidak diketahui.");
+        }
+      }
+    } catch (error) {
+      console.error("Error in barcode search:", error);
+      toast.error("Tidak dapat terhubung ke server!");
+    } finally {
+      setTimeout(() => setProcessedBarcode(null), 500);
+    }
+  };
 
   return (
     <div className="relative w-full">
       <input
         type="text"
-        placeholder="Cari produk (nama atau barcode)..."
+        placeholder="Cari Produk/Barcode..."
         className="border rounded-lg p-2 w-full pr-10"
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            const barcode = e.currentTarget.value.trim();
+            if (!isNaN(parseInt(barcode))) {
+              handleBarcodeSearch(barcode);
+            }
+          }
+        }}
       />
-
-      {/* Tombol silang untuk menghapus pencarian */}
-      {searchTerm && (
-        <button
-          onClick={() => {
-            setSearchTerm("");
-            setProdukList([]);
-          }}
-          className="absolute right-2 top-1/2 transform -translate-y-1/2 text-red-500 hover:text-red-700"
-        >
-          ✕
-        </button>
-      )}
-
       {loading && <p className="text-sm text-gray-500">Mencari...</p>}
-
       {produkList.length > 0 && (
         <ul className="absolute bg-white border rounded-lg w-full mt-1 max-h-60 overflow-auto z-20">
           {produkList.map((produk) => (
@@ -97,10 +136,7 @@ export default function SearchBarProduk({ onSelect }: SearchBarProps) {
                   Barcode: {produk.barcode}
                 </p>
                 <p className="text-sm text-green-600">
-                  Rp{" "}
-                  {parseInt(produk.harga_jual.toString()).toLocaleString(
-                    "id-ID"
-                  )}
+                  Rp {produk.harga_jual.toLocaleString("id-ID")}
                 </p>
                 <p className="text-xs text-gray-500">Stok: {produk.stok}</p>
               </div>

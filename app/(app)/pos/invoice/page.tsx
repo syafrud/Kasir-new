@@ -14,6 +14,7 @@ import { format } from "date-fns";
 import { NotaPrint } from "@/components/print/NotaPrint";
 import { PrintInvoice } from "@/components/print/PrintInvoice";
 import { updatePenjualan } from "@/app/api/penjualan/actions";
+import toast from "react-hot-toast";
 
 interface InvoiceItem {
   id: number;
@@ -125,6 +126,28 @@ export default function SalesPage() {
     } catch (error) {
       console.error("Error fetching products:", error);
       setProducts([]);
+    }
+  };
+
+  const handleBarcodeInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const barcode = e.target.value.trim();
+    setProductSearchTerm(barcode);
+
+    if (barcode.length > 11) {
+      try {
+        const res = await fetch(`/api/produk/barcode/${barcode}`);
+
+        const data = await res.json();
+        if (data.produk) {
+          handleAddProduct(data.produk);
+          setProductSearchTerm("");
+        } else {
+          toast.error("Produk dengan barcode tersebut tidak ditemukan!");
+        }
+      } catch (error) {
+        toast.error("Gagal mencari produk! Coba lagi.", {});
+        console.error("Error mencari produk:", error);
+      }
     }
   };
 
@@ -371,12 +394,12 @@ export default function SalesPage() {
       }
 
       if (editedInvoice.bayar < neto) {
-        alert(
+        toast.error(
           `Pembayaran kurang! Total yang harus dibayar: Rp ${neto.toFixed(
             2
           )}, tetapi yang dibayarkan hanya Rp ${editedInvoice.bayar.toFixed(2)}`
         );
-        return; // Hentikan proses jika pembayaran kurang
+        return;
       }
 
       const formData = new FormData();
@@ -426,7 +449,7 @@ export default function SalesPage() {
       fetchInvoices();
     } catch (error) {
       console.error("Error saving invoice:", error);
-      alert(
+      toast.error(
         `Failed to save changes: ${
           error instanceof Error ? error.message : "Unknown error"
         }`
@@ -917,12 +940,21 @@ export default function SalesPage() {
                   <div className="flex mb-2 relative">
                     <input
                       type="text"
-                      placeholder="Cari Barang"
+                      placeholder="Scan Barcode atau Cari Barang"
                       className="border p-2 flex-grow"
                       value={productSearchTerm}
-                      onChange={handleProductSearch}
-                      onFocus={() => {
-                        if (productSearchTerm) setShowProductDropdown(true);
+                      onChange={(e) => {
+                        setProductSearchTerm(e.target.value);
+                        const input = e.target.value.trim();
+
+                        if (input.length > 11) {
+                          handleBarcodeInput(e);
+                        } else if (input.length > 0) {
+                          handleProductSearch(e);
+                        } else {
+                          setFilteredProducts([]);
+                          setShowProductDropdown(false);
+                        }
                       }}
                     />
                     <button className="bg-blue-500 text-white p-2">

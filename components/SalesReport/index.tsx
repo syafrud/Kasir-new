@@ -142,13 +142,13 @@ const SalesReportPDF = ({
                 {item.tgl_invoice}
               </Text>
               <Text style={[styles.tableCell, { width: "15%" }]}>
-                {item.neto.toLocaleString()}
+                {item.neto}
               </Text>
               <Text style={[styles.tableCell, { width: "15%" }]}>
-                {item.untung.toLocaleString()}
+                {item.untung}
               </Text>
               <Text style={[styles.tableCell, { width: "15%" }]}>
-                {item.kurang_bayar.toLocaleString()}
+                {item.kurang_bayar}
               </Text>
             </View>
           ))}
@@ -562,14 +562,10 @@ const SalesReport = () => {
                   </td>
                   <td className="py-2 px-4 border">{item.no_invoice}</td>
                   <td className="py-2 px-4 border">{item.tgl_invoice}</td>
+                  <td className="py-2 px-4 border text-right">{item.neto}</td>
+                  <td className="py-2 px-4 border text-right">{item.untung}</td>
                   <td className="py-2 px-4 border text-right">
-                    {item.neto.toLocaleString()}
-                  </td>
-                  <td className="py-2 px-4 border text-right">
-                    {item.untung.toLocaleString()}
-                  </td>
-                  <td className="py-2 px-4 border text-right">
-                    {item.kurang_bayar.toLocaleString()}
+                    {item.kurang_bayar}
                   </td>
                 </tr>
               ))
