@@ -37,7 +37,7 @@ interface Invoice {
   penyesuaian: number;
   id_pelanggan?: number;
   items?: InvoiceItem[];
-  tanggal_penjualan?: string | Date;
+  tanggal_penjualan: string;
 }
 
 interface Customer {
@@ -65,7 +65,7 @@ export default function SalesPage() {
     currentPage: 1,
     totalPages: 1,
     totalItems: 0,
-    pageSize: 10,
+    pageSize: 5,
   });
   const [loading, setLoading] = useState(false);
   const [dateFilterType, setDateFilterType] = useState<
@@ -153,10 +153,20 @@ export default function SalesPage() {
 
   const handleEditClick = () => {
     if (selectedInvoice) {
-      setEditedInvoice({ ...selectedInvoice });
+      const dateParts = selectedInvoice.tgl_invoice.split("-");
+      const formattedDate =
+        dateParts.length === 3
+          ? `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`
+          : selectedInvoice.tgl_invoice;
+
+      setEditedInvoice({
+        ...selectedInvoice,
+        tanggal_penjualan: formattedDate,
+      });
       setEditedItems([...(selectedInvoice.items || [])]);
       fetchProducts();
       setIsEditMode(true);
+      console.log("Formatted date:", formattedDate);
     }
   };
 
@@ -445,7 +455,6 @@ export default function SalesPage() {
       setInvoiceItems(editedItems);
       setIsEditMode(false);
 
-      // Refresh the invoice list
       fetchInvoices();
     } catch (error) {
       console.error("Error saving invoice:", error);
@@ -748,7 +757,7 @@ export default function SalesPage() {
         </div>
 
         <div className="rounded-lg bg-white h-full p-4 flex flex-col">
-          <div className="overflow-y-auto flex-grow max-h-[calc(100vh-280px)]">
+          <div className="overflow-y-auto flex-grow max-h-[calc(100vh-400px)]">
             <table className="w-full">
               <thead>
                 <tr className="border-b-2">
@@ -794,32 +803,39 @@ export default function SalesPage() {
           </div>
 
           {/* Pagination Controls */}
-          <div className="pt-2 border-t">
-            <div className="flex justify-between items-center">
+          <div className="flex items-center justify-between py-2">
+            <div className="">
+              Showing {pagination.pageSize * (pagination.currentPage - 1) + 1}{" "}
+              to{" "}
+              {Math.min(
+                pagination.pageSize * pagination.currentPage,
+                pagination.totalItems
+              )}{" "}
+              of {pagination.totalItems} products
+            </div>
+            <div className="flex items-center space-x-2">
               <button
-                className={`mr-2 px-3 py-1 border rounded ${
+                onClick={handlePreviousPage}
+                disabled={pagination.currentPage === 1}
+                className={`px-3 py-1 border rounded ${
                   pagination.currentPage === 1
                     ? "opacity-50 cursor-not-allowed"
                     : "hover:bg-gray-100"
                 }`}
-                onClick={handlePreviousPage}
-                disabled={pagination.currentPage === 1}
               >
                 Previous
               </button>
-              <span className="mx-2">
-                <span className="bg-blue-500 text-white px-3 py-1 rounded">
-                  {pagination.currentPage}
-                </span>
-              </span>
+              <div className="px-3 py-1">
+                Page {pagination.currentPage} of {pagination.totalPages}
+              </div>
               <button
+                onClick={handleNextPage}
+                disabled={pagination.currentPage === pagination.totalPages}
                 className={`px-3 py-1 border rounded ${
                   pagination.currentPage === pagination.totalPages
                     ? "opacity-50 cursor-not-allowed"
                     : "hover:bg-gray-100"
                 }`}
-                onClick={handleNextPage}
-                disabled={pagination.currentPage === pagination.totalPages}
               >
                 Next
               </button>
@@ -855,8 +871,10 @@ export default function SalesPage() {
                 </h3>
               </div>
 
-              <div className="flex-grow overflow-y-auto">
+              {/* Scrollable content area */}
+              <div className="flex-grow overflow-y-auto max-h-[calc(100vh-280px)]">
                 <div className="grid grid-cols-2 gap-y-2 mb-4">
+                  {/* Customer information fields */}
                   <div>
                     <p className="text-gray-600">Nama Pelanggan</p>
                   </div>
@@ -928,7 +946,7 @@ export default function SalesPage() {
                     <input
                       type="date"
                       className="border p-1 w-full"
-                      defaultValue={selectedInvoice.tgl_invoice}
+                      value={editedInvoice?.tanggal_penjualan || ""}
                       onChange={(e) =>
                         handleInvoiceChange("tanggal_penjualan", e.target.value)
                       }
@@ -982,48 +1000,50 @@ export default function SalesPage() {
                   </div>
 
                   {/* Item list with edit capabilities */}
-                  {editedItems.length > 0 ? (
-                    editedItems.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex justify-between items-center border-b pb-1 mb-1"
-                      >
-                        <div className="flex flex-col">
-                          <p className="text-gray-600">{item.produk_nama}</p>
-                          <p className="text-gray-600">{item.harga_jual}</p>
-                        </div>
+                  <div className="max-h-60 overflow-y-auto">
+                    {editedItems.length > 0 ? (
+                      editedItems.map((item) => (
+                        <div
+                          key={item.id}
+                          className="flex justify-between items-center border-b pb-1 mb-1"
+                        >
+                          <div className="flex flex-col">
+                            <p className="text-gray-600">{item.produk_nama}</p>
+                            <p className="text-gray-600">{item.harga_jual}</p>
+                          </div>
 
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="number"
-                            className="border p-1 w-16"
-                            value={item.qty}
-                            min="1"
-                            onChange={(e) =>
-                              handleItemChange(
-                                item.id,
-                                "qty",
-                                Number(e.target.value)
-                              )
-                            }
-                          />
-                          <p className="font-medium w-24 text-right">
-                            {formatCurrency(item.subtotal)}
-                          </p>
-                          <button
-                            className="text-red-500 px-2"
-                            onClick={() => handleRemoveItem(item.id)}
-                          >
-                            ×
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              className="border p-1 w-16"
+                              value={item.qty}
+                              min="1"
+                              onChange={(e) =>
+                                handleItemChange(
+                                  item.id,
+                                  "qty",
+                                  Number(e.target.value)
+                                )
+                              }
+                            />
+                            <p className="font-medium w-24 text-right">
+                              {formatCurrency(item.subtotal)}
+                            </p>
+                            <button
+                              className="text-red-500 px-2"
+                              onClick={() => handleRemoveItem(item.id)}
+                            >
+                              ×
+                            </button>
+                          </div>
                         </div>
+                      ))
+                    ) : (
+                      <div className="text-center text-gray-500 py-2">
+                        Tidak ada item
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-center text-gray-500 py-2">
-                      Tidak ada item
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
 
                 {/* Transaction summary with editable fields */}
@@ -1087,7 +1107,7 @@ export default function SalesPage() {
                 </div>
               </div>
 
-              {/* Action buttons for edit mode */}
+              {/* Action buttons for edit mode (fixed at bottom) */}
               <div className="mt-2 pt-4 flex justify-end gap-2 border-t">
                 <button
                   className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded flex items-center"
@@ -1111,8 +1131,8 @@ export default function SalesPage() {
                 </h3>
               </div>
 
-              {/* New layout for details, styled to match the image */}
-              <div className="flex-grow">
+              {/* Scrollable content area for view mode */}
+              <div className="flex-grow overflow-y-auto max-h-[calc(100vh-280px)]">
                 <div className="grid grid-cols-2 gap-y-4 mb-4">
                   <div>
                     <p className="text-gray-600">Nama Pelanggan</p>
@@ -1136,8 +1156,8 @@ export default function SalesPage() {
                   </div>
                 </div>
 
-                {/* Item details - Dynamically rendered from invoiceItems */}
-                <div className="mb-4">
+                {/* Item details with overflow handling */}
+                <div className="mb-4 max-h-64 overflow-y-auto">
                   {invoiceItems.length > 0 ? (
                     invoiceItems.map((item) => (
                       <div
@@ -1146,14 +1166,14 @@ export default function SalesPage() {
                       >
                         <div className="flex flex-col">
                           <p className="text-gray-600">{item.produk_nama}</p>
-                          <p className="font-medium  w-28">
+                          <p className="font-medium w-28">
                             {formatCurrency(item.harga_jual)}
                           </p>
                         </div>
 
                         <div className="flex items-center gap-2">
                           <p className="text-gray-600">{item.qty}x</p>
-                          <p className=" font-medium">
+                          <p className="font-medium">
                             {formatCurrency(item.harga_jual * item.qty)}
                           </p>
                         </div>
@@ -1187,27 +1207,27 @@ export default function SalesPage() {
                     </p>
                   </div>
                   <div className="flex justify-between items-center py-2 border-b text-purple-700">
-                    <p className=" font-semibold">Total</p>
-                    <p className="font-semibold ">
+                    <p className="font-semibold">Total</p>
+                    <p className="font-semibold">
                       {formatCurrency(selectedInvoice.neto)}
                     </p>
                   </div>
                   <div className="flex justify-between items-center py-1 text-green-700">
-                    <p className=" font-semibold">Bayar</p>
-                    <p className="font-semibold ">
+                    <p className="font-semibold">Bayar</p>
+                    <p className="font-semibold">
                       {formatCurrency(selectedInvoice.bayar)}
                     </p>
                   </div>
                   <div className="flex justify-between items-center py-1 border-b">
                     <p className="text-gray-600 font-semibold">Kembalian</p>
-                    <p className="font-semibold ">
+                    <p className="font-semibold">
                       {formatCurrency(selectedInvoice.kembalian)}
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Action buttons at the bottom */}
+              {/* Action buttons fixed at bottom */}
               <div className="mt-auto pt-4 flex justify-end gap-2">
                 <button
                   className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded flex items-center"

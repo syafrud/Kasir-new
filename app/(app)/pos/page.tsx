@@ -88,7 +88,7 @@ export default function SalesPage() {
     totalPages: 0,
     currentPage: 1,
   });
-  const [productPageSize, setProductPageSize] = useState(10);
+  const [productPageSize, setProductPageSize] = useState(5);
 
   const fetchInitialData = async () => {
     try {
@@ -449,12 +449,14 @@ export default function SalesPage() {
                 placeholder="Scan Barcode atau Cari Barang"
                 value={searchTerm}
                 onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  const input = e.target.value.trim();
-
-                  if (input.length > 11) {
-                    handleBarcodeInput(e);
+                  const input = e.target.value;
+                  if (/^\d+$/.test(input) && input.length > 12) {
+                    if (input.length > 11) {
+                      handleBarcodeInput(e);
+                    }
+                    return;
                   }
+                  setSearchTerm(input);
                 }}
                 className="w-full pl-10 border-2 p-2"
                 autoFocus
@@ -507,8 +509,17 @@ export default function SalesPage() {
           <div className="pt-2 border-t">
             <div className="flex justify-between items-center">
               <span className="text-sm">
-                Showing {Math.min(productPageSize, filteredProducts.length)} of{" "}
-                {productPagination.totalCount} products
+                Showing{" "}
+                {productPagination.currentPage === 1
+                  ? 1
+                  : (productPagination.currentPage - 1) * productPageSize +
+                    1}{" "}
+                to{" "}
+                {Math.min(
+                  productPagination.currentPage * productPageSize,
+                  productPagination.totalCount
+                )}{" "}
+                of {productPagination.totalCount} products
               </span>
               <div>
                 <button

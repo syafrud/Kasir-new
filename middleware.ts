@@ -9,6 +9,7 @@ export async function middleware(req: NextRequest) {
   const publicPaths = ["/login", "/api"];
 
   const roleBasedPaths: Record<string, string[]> = {
+    "/dashboard": ["ADMIN"],
     "/penjualan": ["ADMIN"],
     "/produk": ["ADMIN"],
     "/kategori-produk": ["ADMIN"],
@@ -22,16 +23,28 @@ export async function middleware(req: NextRequest) {
     path.split("/").length > 1 &&
     !publicPaths.some((publicPath) => path.startsWith(publicPath));
 
+  // Redirect unauthenticated users to login
   if (isAppRoute && !token) {
     return NextResponse.redirect(
       new URL(`/login?callbackUrl=${encodeURIComponent(path)}`, req.url)
     );
   }
 
+  // Redirect authenticated users from login page to their role-specific page
   if (token && path === "/login") {
-    return NextResponse.redirect(new URL("/", req.url));
+    const userRole = (token as { role: string }).role;
+    const redirectPath = userRole === "ADMIN" ? "/dashboard" : "/pos";
+    return NextResponse.redirect(new URL(redirectPath, req.url));
   }
 
+  // Redirect authenticated users from root to their role-specific page
+  if (token && path === "/") {
+    const userRole = (token as { role: string }).role;
+    const redirectPath = userRole === "ADMIN" ? "/dashboard" : "/pos";
+    return NextResponse.redirect(new URL(redirectPath, req.url));
+  }
+
+  // Check role-based access
   if (token) {
     const matchedPath = Object.keys(roleBasedPaths).find((routePath) =>
       path.startsWith(routePath)
@@ -42,7 +55,8 @@ export async function middleware(req: NextRequest) {
       const userRole = (token as { role: string }).role;
 
       if (!allowedRoles.includes(userRole)) {
-        return NextResponse.redirect(new URL("/", req.url));
+        const redirectPath = userRole === "ADMIN" ? "/dashboard" : "/pos";
+        return NextResponse.redirect(new URL(redirectPath, req.url));
       }
     }
   }

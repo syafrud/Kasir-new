@@ -3,6 +3,8 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { LogoutButton } from "@/app/auth";
+import { LogOut } from "lucide-react";
 
 const NavigationBar: React.FC = () => {
   const pathname = usePathname();
@@ -41,8 +43,14 @@ const NavigationBar: React.FC = () => {
             : "bg-blue-500 hover:bg-blue-600"
         }`}
       >
-        <span>Barang</span>
+        <span>Stock Produk</span>
       </Link>
+      <div className="flex justify-center items-center h-full px-5 bg-red-500">
+        <a href="#" className="text-white flex items-center gap-2 ">
+          <LogOut size={20} />
+          <LogoutButton />
+        </a>
+      </div>
     </div>
   );
 };
