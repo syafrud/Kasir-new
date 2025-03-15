@@ -17,6 +17,7 @@
     "@react-pdf/renderer": "^4.2.4",
     "axios": "^1.8.1",
     "bcrypt": "^5.1.1",
+    "chart.js": "^4.4.8",
     "date-fns": "^4.1.0",
     "file-saver": "^2.0.5",
     "lucide-react": "^0.464.0",

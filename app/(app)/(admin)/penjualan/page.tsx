@@ -202,7 +202,7 @@ export default function PenjualanPage() {
   useEffect(() => {
     const fetchProduk = async () => {
       try {
-        const response = await fetch("/api/produk");
+        const response = await fetch("/api/penjualan/produk");
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }

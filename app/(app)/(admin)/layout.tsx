@@ -175,7 +175,7 @@ export default function DashboardLayout({
       <div
         className={`bg-[#ECF3F7] min-h-[calc(100vh-62px)] ${
           isSidebarExpanded ? "ml-[225px]" : "ml-[70px]"
-        } mt-[62px] transition-all duration-300 w-[calc(100vw-${
+        } mt-[62px] transition-all duration-300 w-[calc(100%-${
           isSidebarExpanded ? "225px" : "70px"
         })]`}
       >
@@ -198,9 +198,7 @@ export default function DashboardLayout({
           </div>
           <div
             className={`bottom-0 bg-white py-3 border-t text-center shadow-xl transition-all duration-300 ${
-              isSidebarExpanded
-                ? "ml-[0px] w-[calc(100vw-225px)]"
-                : "ml-[0px] w-[calc(100vw-70px)]"
+              isSidebarExpanded ? "ml-[0px] w-full" : "ml-[0px] w-full"
             }`}
             style={{ zIndex: 10 }}
           >
