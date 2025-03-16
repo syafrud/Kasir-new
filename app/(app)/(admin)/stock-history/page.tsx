@@ -38,27 +38,22 @@ export default function StockHistoryPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // State untuk nilai yang dipilih
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [selectedProduct, setSelectedProduct] = useState<string>("");
 
-  // State untuk nilai yang diketik di input
   const [categoryInput, setCategoryInput] = useState<string>("");
   const [productInput, setProductInput] = useState<string>("");
 
-  // State untuk menampilkan dropdown
   const [showCategoryDropdown, setShowCategoryDropdown] =
     useState<boolean>(false);
   const [showProductDropdown, setShowProductDropdown] =
     useState<boolean>(false);
 
-  // State untuk kategori dan produk yang difilter berdasarkan input
   const [filteredCategories, setFilteredCategories] = useState<Category[]>([]);
 
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
 
-  // Refs untuk dropdown
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
   const productDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -94,7 +89,6 @@ export default function StockHistoryPage() {
 
     fetchData();
 
-    // Tambahkan event listener untuk menutup dropdown saat klik di luar
     const handleClickOutside = (event: MouseEvent) => {
       if (
         categoryDropdownRef.current &&
@@ -116,7 +110,6 @@ export default function StockHistoryPage() {
     };
   }, []);
 
-  // Filter kategori berdasarkan input
   useEffect(() => {
     if (categoryInput) {
       const filtered = categories.filter((category) =>
@@ -130,7 +123,6 @@ export default function StockHistoryPage() {
     }
   }, [categoryInput, categories]);
 
-  // Filter produk berdasarkan kategori yang dipilih dan update produk ketika kategori berubah
   useEffect(() => {
     const fetchProductsByCategory = async () => {
       try {
@@ -163,7 +155,6 @@ export default function StockHistoryPage() {
     fetchProductsByCategory();
   }, [selectedCategory, products, selectedProduct]);
 
-  // Filter produk berdasarkan input
   useEffect(() => {
     if (productInput) {
       const inputFiltered = filteredProducts.filter((product) =>
@@ -236,17 +227,14 @@ export default function StockHistoryPage() {
     }
   };
 
-  // Handler untuk memilih kategori dari dropdown
   const handleSelectCategory = (category: Category) => {
     setSelectedCategory(category.id.toString());
     setCategoryInput(category.nama_kategori);
     setShowCategoryDropdown(false);
-    // Reset produk ketika kategori berubah
     setSelectedProduct("");
     setProductInput("");
   };
 
-  // Handler untuk memilih produk dari dropdown
   const handleSelectProduct = (product: Product) => {
     setSelectedProduct(product.id.toString());
     setProductInput(product.nama_produk);

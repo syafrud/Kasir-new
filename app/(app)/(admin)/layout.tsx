@@ -17,6 +17,8 @@ import {
   Store,
   ShoppingBag,
   Menu,
+  History,
+  CreditCard,
 } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
@@ -55,7 +57,7 @@ export default function DashboardLayout({
         <div className="flex items-center w-[70px] justify-center">
           <button
             onClick={toggleSidebar}
-            className="text-white p-2 rounded-md  transition"
+            className="text-white p-2 rounded-md transition"
           >
             <Menu size={24} />
           </button>
@@ -105,7 +107,7 @@ export default function DashboardLayout({
           />
           <SidebarLink
             href="/penjualan"
-            icon={<ShoppingCart size={20} />}
+            icon={<CreditCard size={20} />}
             label="Transaksi"
             isExpanded={isSidebarExpanded || isHovering}
           />
@@ -118,6 +120,12 @@ export default function DashboardLayout({
               href="/produk"
               icon={<Package size={20} />}
               label="Produk"
+              isExpanded={isSidebarExpanded || isHovering}
+            />
+            <SidebarALink
+              href="/stock-history"
+              icon={<History size={20} />}
+              label="Stock History"
               isExpanded={isSidebarExpanded || isHovering}
             />
             <SidebarALink
