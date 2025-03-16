@@ -31,12 +31,10 @@ export default function StockAdjustmentPage() {
     setAdjustmentType(value);
   };
 
-  // Fetch products on component mount
   useEffect(() => {
     fetchProducts();
   }, [currentPage, pageSize]);
 
-  // Filter products when search term changes
   useEffect(() => {
     if (searchTerm) {
       const filtered = products.filter(
@@ -106,10 +104,8 @@ export default function StockAdjustmentPage() {
         `Stok berhasil ${type === "in" ? "ditambahkan" : "dikurangi"}`
       );
 
-      // Refresh product data
       fetchProducts();
 
-      // Reset form
       setSelectedProduct(null);
       setAdjustmentValue(1);
       setAdjustmentType("in");

@@ -20,6 +20,7 @@ import {
   StyleSheet,
 } from "@react-pdf/renderer";
 import axios from "axios";
+import toast from "react-hot-toast";
 
 interface SalesData {
   nama_barang: string;
@@ -173,7 +174,7 @@ const PerItemSalesReport = () => {
     end: new Date(),
   });
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [itemsPerPage] = useState<number>(10);
+  const [itemsPerPage, setItemsPerPage] = useState<number>(10);
   const [totalItems, setTotalItems] = useState<number>(0);
   const [summary, setSummary] = useState({
     total_penjualan: 0,
@@ -256,7 +257,7 @@ const PerItemSalesReport = () => {
 
   const exportToExcel = () => {
     if (salesData.length === 0) {
-      alert("Tidak ada data untuk di-export");
+      toast.error("Tidak ada data untuk di-export");
       return;
     }
 
@@ -306,14 +307,14 @@ const PerItemSalesReport = () => {
       saveAs(data, filename);
     } catch (error) {
       console.error("Error saat ekspor Excel:", error);
-      alert("Gagal membuat file Excel. Coba lagi.");
+      toast.error("Gagal membuat file Excel. Coba lagi.");
     }
   };
 
   useEffect(() => {
     setSalesData([]);
     fetchSalesData();
-  }, [dateOption, customDateRange, currentPage]);
+  }, [dateOption, customDateRange, currentPage, itemsPerPage]);
 
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const handlePageChange = (page: number) => {
@@ -324,8 +325,8 @@ const PerItemSalesReport = () => {
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">Laporan Penjualan Per Item</h1>
 
-      {/* Date Range Filter */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      {/* Date and Customer Filter Row */}
+      <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mb-6">
         <div>
           <label className="block mb-1">Tanggal</label>
           <select
@@ -371,23 +372,60 @@ const PerItemSalesReport = () => {
             </div>
           )}
         </div>
+      </div>
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="p-4 bg-white rounded-lg border shadow-sm">
+          <p className="text-gray-500">Total Penjualan</p>
+          <h2 className="text-2xl font-bold">
+            {summary.total_penjualan.toLocaleString()}
+          </h2>
+        </div>
 
-        <div className="flex items-end space-x-2">
-          {salesData.length > 0 ? (
-            <button
-              onClick={exportToExcel}
-              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-            >
-              XLSX
-            </button>
-          ) : (
-            <button
-              disabled
-              className="px-4 py-2 bg-green-400 text-white rounded cursor-not-allowed"
-            >
-              XLSX
-            </button>
-          )}
+        <div className="p-4 bg-white rounded-lg border shadow-sm">
+          <p className="text-gray-500">Total Untung</p>
+          <h2 className="text-2xl font-bold">
+            {summary.total_untung.toLocaleString()}
+          </h2>
+        </div>
+
+        <div className="p-4 bg-white rounded-lg border shadow-sm">
+          <p className="text-gray-500">Jumlah Penjualan</p>
+          <h2 className="text-2xl font-bold">{summary.total_qty}</h2>
+        </div>
+      </div>
+
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center">
+          <span className="mr-2">Show</span>
+          <select
+            className="p-2 border rounded"
+            value={itemsPerPage}
+            onChange={(e) => {
+              setItemsPerPage(Number(e.target.value));
+              setCurrentPage(1);
+            }}
+          >
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+          <span className="ml-2">entries</span>
+        </div>
+
+        <div className="flex space-x-2">
+          <button
+            onClick={exportToExcel}
+            className={`px-4 py-2 ${
+              salesData.length > 0
+                ? "bg-green-600 hover:bg-green-700"
+                : "bg-green-400 cursor-not-allowed"
+            } text-white rounded`}
+            disabled={salesData.length === 0}
+          >
+            XLSX
+          </button>
 
           {salesData.length > 0 ? (
             <PDFDownloadLink

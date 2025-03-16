@@ -1,4 +1,3 @@
-// app/api/sales/route.ts
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { format } from "date-fns";
@@ -34,11 +33,46 @@ export async function GET(request: Request) {
       };
     }
 
+    // Get total count of matching items
     const totalItems = await prisma.penjualan.count({
       where,
     });
 
-    const sales = await prisma.penjualan.findMany({
+    // Get all sales for total calculations (without pagination)
+    const allSales = await prisma.penjualan.findMany({
+      where,
+      include: {
+        detail_penjualan: {
+          where: { isDeleted: false },
+          include: {
+            produk: {
+              select: {
+                harga_beli: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // Calculate totals from all sales
+    const totalPenjualan = allSales.reduce((sum, sale) => {
+      return sum + Number(sale.total_harga);
+    }, 0);
+
+    const totalUntung = allSales.reduce((sum, sale) => {
+      return (
+        sum +
+        sale.detail_penjualan.reduce((itemSum, item) => {
+          const modal = Number(item.produk.harga_beli) * item.qty;
+          const pendapatan = Number(item.total_harga);
+          return itemSum + (pendapatan - modal);
+        }, 0)
+      );
+    }, 0);
+
+    // Get paginated sales for display
+    const paginatedSales = await prisma.penjualan.findMany({
       where,
       include: {
         pelanggan: {
@@ -51,6 +85,7 @@ export async function GET(request: Request) {
           include: {
             produk: {
               select: {
+                nama_produk: true,
                 harga_beli: true,
                 harga_jual: true,
               },
@@ -77,9 +112,15 @@ export async function GET(request: Request) {
       },
     });
 
-    const formattedSales = sales.map((sale) => {
+    const formattedSales = paginatedSales.map((sale) => {
       const subTotal = sale.detail_penjualan.reduce((sum, item) => {
-        return sum + item.qty * item.produk.harga_jual.toNumber();
+        return sum + Number(item.total_harga);
+      }, 0);
+
+      const untung = sale.detail_penjualan.reduce((sum, item) => {
+        const modal = Number(item.produk.harga_beli) * item.qty;
+        const pendapatan = Number(item.total_harga);
+        return sum + (pendapatan - modal);
       }, 0);
 
       return {
@@ -96,12 +137,15 @@ export async function GET(request: Request) {
         bayar: sale.total_bayar.toNumber(),
         kembalian: sale.kembalian.toNumber(),
         penyesuaian: sale.penyesuaian.toNumber(),
+        untung: untung,
       };
     });
 
     return NextResponse.json({
       sales: formattedSales,
       total: totalItems,
+      totalPenjualan: totalPenjualan, // Pass total sales amount
+      totalUntung: totalUntung, // Pass total profit amount
       customers: customers.map((c) => c.nama),
     });
   } catch (error) {

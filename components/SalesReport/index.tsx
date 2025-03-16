@@ -20,6 +20,7 @@ import {
   StyleSheet,
 } from "@react-pdf/renderer";
 import axios from "axios";
+import toast from "react-hot-toast";
 
 interface SalesData {
   id: number;
@@ -30,8 +31,6 @@ interface SalesData {
   diskon: number;
   neto: number;
   untung: number;
-  kurang_bayar: number;
-  status: string;
 }
 
 interface DateRange {
@@ -90,9 +89,15 @@ const styles = StyleSheet.create({
 const SalesReportPDF = ({
   data,
   dateRange,
+  totalPenjualan,
+  totalUntung,
+  totalItems,
 }: {
   data: SalesData[];
   dateRange: DateRange;
+  totalPenjualan: number;
+  totalUntung: number;
+  totalItems: number;
 }) => {
   const startDateStr = format(dateRange.start, "dd-MM-yyyy");
   const endDateStr = format(dateRange.end, "dd-MM-yyyy");
@@ -122,9 +127,6 @@ const SalesReportPDF = ({
             <Text style={[styles.tableHeaderCell, { width: "15%" }]}>
               Untung
             </Text>
-            <Text style={[styles.tableHeaderCell, { width: "15%" }]}>
-              Kurang Bayar
-            </Text>
           </View>
 
           {data.map((item, index) => (
@@ -147,23 +149,14 @@ const SalesReportPDF = ({
               <Text style={[styles.tableCell, { width: "15%" }]}>
                 {item.untung}
               </Text>
-              <Text style={[styles.tableCell, { width: "15%" }]}>
-                {item.kurang_bayar}
-              </Text>
             </View>
           ))}
         </View>
 
         <View style={styles.summary}>
-          <Text>
-            Total Penjualan:{" "}
-            {data.reduce((sum, item) => sum + item.neto, 0).toLocaleString()}
-          </Text>
-          <Text>
-            Total Untung:{" "}
-            {data.reduce((sum, item) => sum + item.untung, 0).toLocaleString()}
-          </Text>
-          <Text>Jumlah Penjualan: {data.length}</Text>
+          <Text>Total Penjualan: {totalPenjualan.toLocaleString()}</Text>
+          <Text>Total Untung: {totalUntung.toLocaleString()}</Text>
+          <Text>Jumlah Penjualan: {totalItems}</Text>
         </View>
       </Page>
     </Document>
@@ -183,6 +176,8 @@ const SalesReport = () => {
   const [totalItems, setTotalItems] = useState<number>(0);
   const [customerFilter, setCustomerFilter] = useState<string>("Semua");
   const [customers, setCustomers] = useState<string[]>([]);
+  const [totalPenjualan, setTotalPenjualan] = useState<number>(0);
+  const [totalUntung, setTotalUntung] = useState<number>(0);
 
   const getDateRange = (): DateRange => {
     const today = new Date();
@@ -241,6 +236,9 @@ const SalesReport = () => {
       }
 
       setTotalItems(response.data.total || 0);
+      setTotalPenjualan(response.data.totalPenjualan || 0);
+      setTotalUntung(response.data.totalUntung || 0);
+
       if (response.data.customers) {
         setCustomers(["Semua", ...response.data.customers]);
       }
@@ -257,27 +255,6 @@ const SalesReport = () => {
     fetchSalesData();
   }, [dateOption, customDateRange, currentPage, customerFilter]);
 
-  const handleDateOptionChange = (option: string) => {
-    setDateOption(option);
-    setCurrentPage(1);
-  };
-
-  const handleCustomDateChange = (type: "start" | "end", value: string) => {
-    const selectedDate = new Date(value);
-    const today = new Date();
-
-    if (selectedDate > today) {
-      alert("Cannot select future dates");
-      return;
-    }
-
-    setCustomDateRange((prev) => ({
-      ...prev,
-      [type]: selectedDate,
-    }));
-    setCurrentPage(1);
-  };
-
   const handleCustomerFilterChange = (value: string) => {
     setCustomerFilter(value);
     setCurrentPage(1);
@@ -285,7 +262,7 @@ const SalesReport = () => {
 
   const exportToExcel = () => {
     if (salesData.length === 0) {
-      alert("Tidak ada data untuk di-export");
+      toast.error("Tidak ada data untuk di-export");
       return;
     }
 
@@ -298,8 +275,6 @@ const SalesReport = () => {
       "Tgl. Invoice": item.tgl_invoice,
       Neto: item.neto,
       Untung: item.untung,
-      "Kurang Bayar": item.kurang_bayar,
-      Status: item.status,
     }));
 
     excelData.push({
@@ -307,13 +282,8 @@ const SalesReport = () => {
       "Nama Customer": "TOTAL",
       "No Invoice": "",
       "Tgl. Invoice": "",
-      Neto: salesData.reduce((sum, item) => sum + item.neto, 0),
-      Untung: salesData.reduce((sum, item) => sum + item.untung, 0),
-      "Kurang Bayar": salesData.reduce(
-        (sum, item) => sum + item.kurang_bayar,
-        0
-      ),
-      Status: "",
+      Neto: totalPenjualan,
+      Untung: totalUntung,
     });
 
     const worksheet = XLSX.utils.json_to_sheet(excelData);
@@ -429,18 +399,14 @@ const SalesReport = () => {
         <div className="p-4 bg-gray-50 rounded-lg border">
           <div className="text-sm text-gray-500">Total Penjualan</div>
           <div className="text-xl font-semibold">
-            {salesData
-              .reduce((sum, item) => sum + item.neto, 0)
-              .toLocaleString()}
+            {totalPenjualan.toLocaleString()}
           </div>
         </div>
 
         <div className="p-4 bg-gray-50 rounded-lg border">
           <div className="text-sm text-gray-500">Total Untung</div>
           <div className="text-xl font-semibold">
-            {salesData
-              .reduce((sum, item) => sum + item.untung, 0)
-              .toLocaleString()}
+            {totalUntung.toLocaleString()}
           </div>
         </div>
 
@@ -448,58 +414,6 @@ const SalesReport = () => {
           <div className="text-sm text-gray-500">Jumlah Penjualan</div>
           <div className="text-xl font-semibold">{totalItems}</div>
         </div>
-      </div>
-
-      {/* Export Buttons */}
-      <div className="flex justify-end space-x-2 mb-4">
-        {salesData.length > 0 ? (
-          <PDFDownloadLink
-            document={
-              <SalesReportPDF data={salesData} dateRange={getDateRange()} />
-            }
-            fileName={`Laporan_Penjualan_${format(
-              getDateRange().start,
-              "dd-MM-yyyy"
-            )}_${format(getDateRange().end, "dd-MM-yyyy")}.pdf`}
-            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-          >
-            {({ loading }) => (loading ? "Menyiapkan PDF..." : "PDF")}
-          </PDFDownloadLink>
-        ) : (
-          <button
-            disabled
-            className="px-4 py-2 bg-red-400 text-white rounded cursor-not-allowed"
-          >
-            PDF
-          </button>
-        )}
-
-        {salesData.length > 0 ? (
-          <button
-            onClick={exportToExcel}
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-          >
-            XLSX
-          </button>
-        ) : (
-          <button
-            disabled
-            className="px-4 py-2 bg-green-400 text-white rounded cursor-not-allowed"
-          >
-            XLSX
-          </button>
-        )}
-
-        <button
-          className={`px-4 py-2 ${
-            salesData.length > 0
-              ? "bg-blue-600 hover:bg-blue-700"
-              : "bg-blue-400 cursor-not-allowed"
-          } text-white rounded`}
-          disabled={salesData.length === 0}
-        >
-          Email
-        </button>
       </div>
 
       {/* Results per page & search */}
@@ -515,9 +429,50 @@ const SalesReport = () => {
           <span className="ml-2">entries</span>
         </div>
 
-        <div className="flex items-center">
-          <span className="mr-2">Search:</span>
-          <input type="text" className="p-1 border rounded" />
+        <div className="flex items-center gap-5">
+          {salesData.length > 0 ? (
+            <PDFDownloadLink
+              document={
+                <SalesReportPDF
+                  data={salesData}
+                  dateRange={getDateRange()}
+                  totalPenjualan={totalPenjualan}
+                  totalUntung={totalUntung}
+                  totalItems={totalItems}
+                />
+              }
+              fileName={`Laporan_Penjualan_${format(
+                getDateRange().start,
+                "dd-MM-yyyy"
+              )}_${format(getDateRange().end, "dd-MM-yyyy")}.pdf`}
+              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            >
+              {({ loading }) => (loading ? "PDF..." : "PDF")}
+            </PDFDownloadLink>
+          ) : (
+            <button
+              disabled
+              className="px-4 py-2 bg-red-400 text-white rounded cursor-not-allowed"
+            >
+              PDF
+            </button>
+          )}
+
+          {salesData.length > 0 ? (
+            <button
+              onClick={exportToExcel}
+              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+            >
+              XLSX
+            </button>
+          ) : (
+            <button
+              disabled
+              className="px-4 py-2 bg-green-400 text-white rounded cursor-not-allowed"
+            >
+              XLSX
+            </button>
+          )}
         </div>
       </div>
 
@@ -532,7 +487,6 @@ const SalesReport = () => {
               <th className="py-2 px-4 border">Tgl. Transaksi</th>
               <th className="py-2 px-4 border">Neto</th>
               <th className="py-2 px-4 border">Untung/Rugi</th>
-              <th className="py-2 px-4 border">Kurang Bayar</th>
             </tr>
           </thead>
           <tbody>
@@ -564,9 +518,6 @@ const SalesReport = () => {
                   <td className="py-2 px-4 border">{item.tgl_invoice}</td>
                   <td className="py-2 px-4 border text-right">{item.neto}</td>
                   <td className="py-2 px-4 border text-right">{item.untung}</td>
-                  <td className="py-2 px-4 border text-right">
-                    {item.kurang_bayar}
-                  </td>
                 </tr>
               ))
             )}

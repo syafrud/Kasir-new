@@ -83,9 +83,8 @@ export default function Dashboard() {
       const years = await getAvailableYears();
       setAvailableYears(years);
 
-      // Set default years if available
       if (years.length > 0) {
-        const currentYear = years[0]; // Most recent year
+        const currentYear = years[0];
         setStatsYear(currentYear);
         setTopProductsYear(currentYear);
         setCategoryYear(currentYear);
@@ -98,15 +97,12 @@ export default function Dashboard() {
     }
   };
 
-  // Add this useEffect to handle the category chart data
   useEffect(() => {
     loadCategoryChartData(categoryYear);
   }, [categoryYear]);
 
-  // Update the initial loading in the main useEffect
   useEffect(() => {
     loadAvailableYears();
-    // Keep the existing code here
     loadStatsData(statsYear);
     loadTopProductsData(topProductsYear);
     loadCategoryChartData(categoryYear);
@@ -124,7 +120,6 @@ export default function Dashboard() {
     "bg-indigo-500",
   ];
 
-  // Replace the loadDashboardData function with these separate loading functions
   const loadStatsData = async (year: number) => {
     setLoadingStats(true);
     try {
@@ -146,30 +141,27 @@ export default function Dashboard() {
     const ctx = topProductsChartRef.current.getContext("2d");
     if (!ctx || products.length === 0) return;
 
-    // Safely destroy previous chart instance
     if (topProductsChartInstance.current) {
       topProductsChartInstance.current.destroy();
     }
     if (ctx && products.length > 0) {
-      // Prepare data for Chart.js
       const chartData = {
         labels: products.slice(0, 5).map((product) => product.nama_produk),
         datasets: [
           {
             data: products.slice(0, 5).map((product) => product.kontribusi),
             backgroundColor: [
-              "#ef4444", // red-500
-              "#93c5fd", // blue-300
-              "#22c55e", // green-500
-              "#eab308", // yellow-500
-              "#8b5cf6", // purple-500
+              "#ef4444",
+              "#93c5fd",
+              "#22c55e",
+              "#eab308",
+              "#8b5cf6",
             ],
             borderWidth: 0,
           },
         ],
       };
 
-      // Create new chart
       topProductsChartInstance.current = new Chart(ctx, {
         type: "pie",
         data: chartData,
@@ -198,23 +190,21 @@ export default function Dashboard() {
     const ctx = categoryChartRef.current.getContext("2d");
     if (!ctx || categories.length === 0) return;
 
-    // Safely destroy previous chart instance
     if (categoryChartInstance.current) {
       categoryChartInstance.current.destroy();
     }
     if (ctx && categories.length > 0) {
-      // Prepare data for Chart.js
       const chartData = {
         labels: categories.slice(0, 5).map((category) => category.name),
         datasets: [
           {
             data: categories.slice(0, 5).map((category) => category.value),
             backgroundColor: [
-              "#ef4444", // red-500
-              "#93c5fd", // blue-300
-              "#22c55e", // green-500
-              "#eab308", // yellow-500
-              "#8b5cf6", // purple-500
+              "#ef4444",
+              "#93c5fd",
+              "#22c55e",
+              "#eab308",
+              "#8b5cf6",
             ],
             borderWidth: 0,
           },
@@ -1023,7 +1013,7 @@ export default function Dashboard() {
                       </td>
                       <td className="py-2 px-4">{sale.item_count}</td>
                       <td className="py-2 px-4">
-                        {formatCurrency(sale.total_bayar)}
+                        {formatCurrency(sale.total_harga)}
                       </td>
                       <td className="py-2 px-4">
                         {formatDate(sale.tanggal_penjualan)}

@@ -14,22 +14,40 @@ export async function GET(request: Request) {
       searchParams.get("endDate") || format(new Date(), "yyyy-MM-dd");
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = parseInt(searchParams.get("limit") || "10", 10);
+    const customerId = searchParams.get("customerId");
     const skip = (page - 1) * limit;
 
-    const salesData = await prisma.detail_penjualan.findMany({
-      where: {
-        tanggal_penjualan: {
-          gte: new Date(`${startDate}T00:00:00`),
-          lte: new Date(`${endDate}T23:59:59`),
-        },
-        isDeleted: false,
+    // Build the where clause
+    const whereClause: any = {
+      tanggal_penjualan: {
+        gte: new Date(`${startDate}T00:00:00`),
+        lte: new Date(`${endDate}T23:59:59`),
       },
+      isDeleted: false,
+    };
+
+    // Add customer filter if specified
+    const salesData = await prisma.detail_penjualan.findMany({
+      where: whereClause,
       include: {
         produk: true,
+        penjualan: {
+          include: {
+            pelanggan: true,
+          },
+        },
       },
     });
 
-    const groupedSales = salesData.reduce((acc, item) => {
+    // Filter by customer ID if specified
+    const filteredSales =
+      customerId && customerId !== "Semua"
+        ? salesData.filter(
+            (sale) => sale.penjualan.id_pelanggan?.toString() === customerId
+          )
+        : salesData;
+
+    const groupedSales = filteredSales.reduce((acc, item) => {
       const { id, nama_produk, harga_jual, harga_beli } = item.produk;
       if (!acc[id]) {
         acc[id] = {
@@ -62,9 +80,18 @@ export async function GET(request: Request) {
 
     const total = Object.keys(groupedSales).length;
     const summary = {
-      total_penjualan: sales.reduce((sum, item) => sum + item.neto, 0),
-      total_untung: sales.reduce((sum, item) => sum + item.untung, 0),
-      total_qty: sales.reduce((sum, item) => sum + item.qty_terjual, 0),
+      total_penjualan: Object.values(groupedSales).reduce(
+        (sum: number, item: any) => sum + item.neto,
+        0
+      ),
+      total_untung: Object.values(groupedSales).reduce(
+        (sum: number, item: any) => sum + item.untung,
+        0
+      ),
+      total_qty: Object.values(groupedSales).reduce(
+        (sum: number, item: any) => sum + item.qty_terjual,
+        0
+      ),
     };
 
     return NextResponse.json({ sales, total, summary });

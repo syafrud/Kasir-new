@@ -2,14 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import {
-  Search,
-  Calendar,
-  UserCheck,
-  Edit,
-  FileText,
-  Mail,
-} from "lucide-react";
+import { Search, Calendar, UserCheck, Edit, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { NotaPrint } from "@/components/print/NotaPrint";
 import { PrintInvoice } from "@/components/print/PrintInvoice";
@@ -459,9 +452,7 @@ export default function SalesPage() {
     } catch (error) {
       console.error("Error saving invoice:", error);
       toast.error(
-        `Failed to save changes: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
+        `${error instanceof Error ? error.message : "Unknown error"}`
       );
     }
   };
@@ -1270,12 +1261,6 @@ export default function SalesPage() {
                   onClick={handlePrintInvoice}
                 >
                   <FileText size={16} className="mr-1" /> Invoice
-                </button>
-                <button className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded flex items-center">
-                  <Mail size={16} className="mr-1" /> PDF
-                </button>
-                <button className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded flex items-center">
-                  <Mail size={16} className="mr-1" /> Email
                 </button>
               </div>
             </>

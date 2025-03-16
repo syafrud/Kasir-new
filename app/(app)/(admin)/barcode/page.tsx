@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import type { produk } from "@prisma/client";
 import JsBarcode from "jsbarcode";
 import { jsPDF } from "jspdf";
+import toast from "react-hot-toast";
 
 interface BarcodeSettings {
   paperSize: string;
@@ -24,7 +25,7 @@ interface ProdukWithDetails extends produk {
   detail_penjualan?: {
     qty: number;
   }[];
-  qty?: number; // For tracking how many copies to print
+  qty?: number;
 }
 
 interface ApiResponse {
@@ -74,7 +75,6 @@ const CetakBarcode: React.FC = () => {
     marginTop: 50,
   });
 
-  // Fetch products from API
   const fetchProducts = async (
     search: string = "",
     currentPage: number = 1
@@ -103,12 +103,10 @@ const CetakBarcode: React.FC = () => {
     }
   };
 
-  // Initial fetch
   useEffect(() => {
     fetchProducts();
   }, []);
 
-  // Search products
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       fetchProducts(searchTerm, 1);
@@ -130,7 +128,6 @@ const CetakBarcode: React.FC = () => {
       });
     }
 
-    // If user is changing width or height, switch to Custom paper size
     if (
       (key === "width" || key === "height") &&
       settings.paperSize !== "Custom"
@@ -144,10 +141,9 @@ const CetakBarcode: React.FC = () => {
 
   const selectProduct = (product: ProdukWithDetails) => {
     setSelectedProducts((prev) => {
-      // Check if product is already selected
       const existingIndex = prev.findIndex((p) => p.id === product.id);
       if (existingIndex >= 0) {
-        return prev; // Product already selected
+        return prev;
       } else {
         return [...prev, { ...product, qty: 1 }];
       }
@@ -167,20 +163,18 @@ const CetakBarcode: React.FC = () => {
 
   const generatePreview = () => {
     if (selectedProducts.length === 0) {
-      alert("Pilih setidaknya satu produk untuk mencetak barcode");
+      toast.error("Pilih setidaknya satu produk untuk mencetak barcode");
       return;
     }
 
     setPreview(true);
 
-    // Use setTimeout to ensure DOM is updated
     setTimeout(() => {
       if (!previewContainerRef.current) return;
 
       const container = previewContainerRef.current;
       container.innerHTML = "";
 
-      // Style the container to match the paper size
       container.style.width = `${settings.width}mm`;
       container.style.minHeight = `${settings.height}mm`;
       container.style.position = "relative";
@@ -192,7 +186,6 @@ const CetakBarcode: React.FC = () => {
       container.style.gap = "5mm";
       container.style.backgroundColor = "white";
 
-      // Create barcode items
       selectedProducts.forEach((product) => {
         for (let i = 0; i < (product.qty || 1); i++) {
           const barcodeItem = document.createElement("div");
@@ -204,7 +197,6 @@ const CetakBarcode: React.FC = () => {
           barcodeItem.style.alignItems = "center";
           barcodeItem.style.backgroundColor = "white";
 
-          // Product name
           const productName = document.createElement("div");
           productName.style.fontWeight = "bold";
           productName.style.fontSize = "10pt";
@@ -213,14 +205,12 @@ const CetakBarcode: React.FC = () => {
           productName.textContent = product.nama_produk;
           barcodeItem.appendChild(productName);
 
-          // Price
           const productPrice = document.createElement("div");
           productPrice.style.fontSize = "10pt";
           productPrice.style.marginBottom = "3mm";
           productPrice.textContent = `Rp ${product.harga_jual.toLocaleString()}`;
           barcodeItem.appendChild(productPrice);
 
-          // Barcode
           const barcodeCanvas = document.createElement("canvas");
           try {
             JsBarcode(barcodeCanvas, product.barcode, {
@@ -251,17 +241,15 @@ const CetakBarcode: React.FC = () => {
   };
 
   const handlePrint = () => {
-    // Create a new window for printing
     const printWindow = window.open("", "_blank", "width=800,height=600");
 
     if (!printWindow) {
-      alert(
+      toast.error(
         "Popup blocker may be preventing printing. Please allow popups for this site."
       );
       return;
     }
 
-    // Write the HTML content for printing
     printWindow.document.write(`
   <!DOCTYPE html>
   <html>
@@ -323,7 +311,6 @@ const CetakBarcode: React.FC = () => {
     <div class="product-grid">
   `);
 
-    // Generate content for all selected products in the grid
     selectedProducts.forEach((product, index) => {
       for (let i = 0; i < (product.qty || 1); i++) {
         printWindow.document.write(`
@@ -345,7 +332,6 @@ const CetakBarcode: React.FC = () => {
   </div>
     <script>
       window.onload = function() {
-        // Generate all barcodes
         ${selectedProducts
           .map((product, productIndex) => {
             let scriptCode = "";
@@ -367,7 +353,6 @@ const CetakBarcode: React.FC = () => {
           })
           .join("\n")}
         
-        // Print after a short delay to ensure barcodes are rendered
         setTimeout(function() {
           window.print();
           setTimeout(function() {
@@ -383,37 +368,31 @@ const CetakBarcode: React.FC = () => {
     printWindow.document.close();
   };
 
-  // For the PDF export, add gaps between barcode items
   const exportToPDF = () => {
     if (selectedProducts.length === 0) {
-      alert("Pilih setidaknya satu produk untuk mencetak barcode");
+      toast.error("Pilih setidaknya satu produk untuk mencetak barcode");
       return;
     }
 
-    // Create a new jsPDF instance with the specified paper size
     const pdf = new jsPDF({
       orientation: settings.width > settings.height ? "landscape" : "portrait",
       unit: "mm",
       format: [settings.width, settings.height],
     });
 
-    // Create a temporary div to render barcodes
     const tempDiv = document.createElement("div");
     tempDiv.style.position = "absolute";
     tempDiv.style.left = "-9999px";
     document.body.appendChild(tempDiv);
 
-    // Set up grid layout
-    const margin = 10; // margin in mm
+    const margin = 10;
     const availableWidth = settings.width - 2 * margin;
     const availableHeight = settings.height - 2 * margin;
 
-    // Add gap between items
-    const gapSize = 5; // 5mm gap between items
+    const gapSize = 5;
 
-    // Calculate optimal dimensions for each barcode item
-    const itemWidth = Math.min(50, availableWidth / 3) - gapSize; // Account for gap
-    const itemHeight = Math.min(35, availableHeight / 5) - gapSize; // Account for gap
+    const itemWidth = Math.min(50, availableWidth / 3) - gapSize;
+    const itemHeight = Math.min(35, availableHeight / 5) - gapSize;
 
     const columns = Math.floor(availableWidth / (itemWidth + gapSize));
     const rows = Math.floor(availableHeight / (itemHeight + gapSize));
@@ -422,10 +401,8 @@ const CetakBarcode: React.FC = () => {
     let currentRow = 0;
     let currentCol = 0;
 
-    // Process each product
     selectedProducts.forEach((product) => {
       for (let i = 0; i < (product.qty || 1); i++) {
-        // Check if we need a new page
         if (currentRow >= rows) {
           pdf.addPage();
           currentPage++;
@@ -433,15 +410,12 @@ const CetakBarcode: React.FC = () => {
           currentCol = 0;
         }
 
-        // Calculate position - include gap
         const x = margin + currentCol * (itemWidth + gapSize);
         const y = margin + currentRow * (itemHeight + gapSize);
 
-        // Create barcode element
         const barcodeContainer = document.createElement("div");
         barcodeContainer.style.padding = "2mm";
 
-        // Add product name
         const productName = document.createElement("div");
         productName.style.fontWeight = "bold";
         productName.style.fontSize = "8pt";
@@ -449,8 +423,6 @@ const CetakBarcode: React.FC = () => {
         productName.textContent = product.nama_produk;
         barcodeContainer.appendChild(productName);
 
-        // Add price
-        // Add barcode to PDF
         const productPrice = document.createElement("div");
         productPrice.style.fontSize = "8pt";
         productPrice.style.textAlign = "center";
@@ -459,12 +431,11 @@ const CetakBarcode: React.FC = () => {
         )}`;
         barcodeContainer.appendChild(productPrice);
 
-        // Add barcode
         const barcodeCanvas = document.createElement("canvas");
         JsBarcode(barcodeCanvas, product.barcode, {
           format: "CODE128",
           width: settings.barcodeWidth,
-          height: settings.barcodeHeight / 2, // Reduced for PDF
+          height: settings.barcodeHeight / 2,
           displayValue: settings.showNumbers,
           fontSize: 8,
           margin: 2,
@@ -473,14 +444,12 @@ const CetakBarcode: React.FC = () => {
 
         tempDiv.appendChild(barcodeContainer);
 
-        // Add product name to PDF
         pdf.setFontSize(9);
         pdf.setFont("helvetica", "bold");
         pdf.text(product.nama_produk, x + itemWidth / 2, y + 5, {
           align: "center",
         });
 
-        // Add price to PDF
         pdf.setFontSize(8);
         pdf.setFont("helvetica", "normal");
         pdf.text(
@@ -492,7 +461,6 @@ const CetakBarcode: React.FC = () => {
           { align: "center" }
         );
 
-        // Add barcode to PDF
         pdf.addImage(
           barcodeCanvas.toDataURL("image/jpeg", 1.0),
           "JPEG",
@@ -502,12 +470,10 @@ const CetakBarcode: React.FC = () => {
           itemHeight - 15
         );
 
-        // Draw border around the item
         pdf.rect(x, y, itemWidth, itemHeight);
 
         currentCol++;
 
-        // Move to next row if needed
         if (currentCol >= columns) {
           currentCol = 0;
           currentRow++;
@@ -515,14 +481,10 @@ const CetakBarcode: React.FC = () => {
       }
     });
 
-    // Clean up
     document.body.removeChild(tempDiv);
 
-    // Save the PDF
     pdf.save(`barcodes_${new Date().toISOString().slice(0, 10)}.pdf`);
   };
-
-  // Add this helper function to create table rows with barcode data
 
   const handlePageChange = (newPage: number) => {
     if (newPage < 1 || newPage > totalPages) return;
@@ -532,10 +494,9 @@ const CetakBarcode: React.FC = () => {
 
   const handleSearch = () => {
     fetchProducts(searchTerm, 1);
-    setIsModalOpen(true); // Buka modal saat search
+    setIsModalOpen(true);
   };
 
-  // Add event handler to the search input for pressing Enter
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       handleSearch();
@@ -807,36 +768,6 @@ const CetakBarcode: React.FC = () => {
             </div>
           </div>
         )}
-        {/* Pagination */}
-        <div className="mt-4 flex justify-between items-center">
-          <div>
-            Halaman {page} dari {totalPages}
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => handlePageChange(page - 1)}
-              disabled={page === 1}
-              className={`px-3 py-1 rounded ${
-                page === 1
-                  ? "bg-gray-200 text-gray-500"
-                  : "bg-blue-600 text-white"
-              }`}
-            >
-              Sebelumnya
-            </button>
-            <button
-              onClick={() => handlePageChange(page + 1)}
-              disabled={page === totalPages}
-              className={`px-3 py-1 rounded ${
-                page === totalPages
-                  ? "bg-gray-200 text-gray-500"
-                  : "bg-blue-600 text-white"
-              }`}
-            >
-              Berikutnya
-            </button>
-          </div>
-        </div>
       </div>
       {/* Selected Products */}
       <div>

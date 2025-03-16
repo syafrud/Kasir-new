@@ -195,7 +195,7 @@ export default function SalesPage() {
 
   const handlePaymentConfirmation = async () => {
     if (!session?.user?.id) {
-      alert("Silakan login terlebih dahulu");
+      toast("Silakan login terlebih dahulu");
       return;
     }
 
@@ -231,7 +231,12 @@ export default function SalesPage() {
       }
     } catch (error) {
       console.error("Error processing sale:", error);
-      alert("Gagal memproses penjualan. Silakan coba lagi.");
+      // Tampilkan pesan error yang lebih spesifik
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Gagal memproses penjualan. Silakan coba lagi."
+      );
     }
   };
 

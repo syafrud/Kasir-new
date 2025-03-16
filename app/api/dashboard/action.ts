@@ -41,7 +41,10 @@ export type RecentSaleData = {
   id: number;
   nama_pembeli: string | null;
   item_count: number;
-  total_bayar: number;
+  total_setelah_diskon: number;
+  total_harga: number;
+  diskon: number;
+  penyesuaian: number;
   tanggal_penjualan: Date;
 };
 
@@ -76,9 +79,9 @@ export async function getStats(year: number): Promise<StatsData> {
     },
   });
 
-  const incomeResult = await prisma.penjualan.aggregate({
+  const detailPenjualanResult = await prisma.detail_penjualan.aggregate({
     _sum: {
-      total_bayar: true,
+      total_harga: true,
     },
     where: {
       isDeleted: false,
@@ -88,6 +91,26 @@ export async function getStats(year: number): Promise<StatsData> {
       },
     },
   });
+
+  const penjualanAggregates = await prisma.penjualan.aggregate({
+    _sum: {
+      diskon: true,
+      penyesuaian: true,
+    },
+    where: {
+      isDeleted: false,
+      tanggal_penjualan: {
+        gte: startDate,
+        lte: endDate,
+      },
+    },
+  });
+
+  const totalDiskon = Number(penjualanAggregates._sum.diskon || 0);
+  const totalPenyesuaian = Number(penjualanAggregates._sum.penyesuaian || 0);
+  const totalHarga = Number(detailPenjualanResult._sum.total_harga || 0);
+
+  const totalIncome = totalHarga - totalDiskon + totalPenyesuaian;
 
   const activeCustomers = await prisma.pelanggan.count({
     where: {
@@ -108,7 +131,7 @@ export async function getStats(year: number): Promise<StatsData> {
   return {
     totalItemsSold,
     totalTransactions,
-    totalIncome: Number(incomeResult._sum.total_bayar || 0),
+    totalIncome,
     activeCustomers,
   };
 }
@@ -119,37 +142,74 @@ export async function getTopProducts(year: number): Promise<TopProductData[]> {
   const startDate = new Date(year, 0, 1);
   const endDate = new Date(year, 11, 31, 23, 59, 59);
 
-  const productSales = await prisma.$queryRaw<any[]>`
-    SELECT 
-      p.id,
-      p.nama_produk,
-      AVG(dp.harga_jual) as harga_jual,
-      SUM(dp.qty) as qty,
-      SUM(dp.total_harga) as total
-    FROM detail_penjualan dp
-    JOIN produk p ON dp.id_produk = p.id
-    WHERE dp.isDeleted = false
-    AND dp.tanggal_penjualan >= ${startDate}
-    AND dp.tanggal_penjualan <= ${endDate}
-    GROUP BY p.id, p.nama_produk
-    ORDER BY total DESC
-    LIMIT 30
-  `;
+  // First get all product sales for the year
+  const detailPenjualan = await prisma.detail_penjualan.findMany({
+    where: {
+      isDeleted: false,
+      tanggal_penjualan: {
+        gte: startDate,
+        lte: endDate,
+      },
+    },
+    select: {
+      id_produk: true,
+      qty: true,
+      harga_jual: true,
+      total_harga: true, // This should already account for line-level discounts
+      produk: {
+        select: {
+          id: true,
+          nama_produk: true,
+        },
+      },
+    },
+  });
 
+  // Group by product and calculate totals
+  const productMap = new Map();
+
+  detailPenjualan.forEach((item) => {
+    const id = item.produk.id;
+    if (!productMap.has(id)) {
+      productMap.set(id, {
+        id: id,
+        nama_produk: item.produk.nama_produk,
+        harga_jual: 0,
+        qty: 0,
+        total: 0,
+        count: 0, // To calculate average price
+      });
+    }
+
+    const product = productMap.get(id);
+    product.harga_jual += Number(item.harga_jual);
+    product.qty += Number(item.qty);
+    product.total += Number(item.total_harga);
+    product.count += 1;
+  });
+
+  // Calculate average price and prepare result
+  let productSales = Array.from(productMap.values()).map((product) => ({
+    id: product.id,
+    nama_produk: product.nama_produk,
+    harga_jual: product.count ? Number(product.harga_jual) / product.count : 0,
+    qty: Number(product.qty),
+    total: Number(product.total),
+  }));
+
+  // Sort by total sales and limit to top 30
+  productSales = productSales.sort((a, b) => b.total - a.total).slice(0, 5);
+
+  // Calculate total sales for contribution percentage
   const totalSales = productSales.reduce(
-    (sum, product) => sum + Number(product.total),
+    (sum, product) => sum + product.total,
     0
   );
 
+  // Add contribution percentage
   return productSales.map((product) => ({
-    id: product.id,
-    nama_produk: product.nama_produk,
-    harga_jual: Number(product.harga_jual),
-    qty: Number(product.qty),
-    total: Number(product.total),
-    kontribusi: totalSales
-      ? Math.round((Number(product.total) / totalSales) * 100)
-      : 0,
+    ...product,
+    kontribusi: totalSales ? Math.round((product.total / totalSales) * 100) : 0,
   }));
 }
 
@@ -159,25 +219,54 @@ export async function getCategoryData(year: number): Promise<CategoryData[]> {
   const startDate = new Date(year, 0, 1);
   const endDate = new Date(year, 11, 31, 23, 59, 59);
 
-  const categorySales = await prisma.$queryRaw<any[]>`
-    SELECT 
-      k.nama_kategori as name,
-      SUM(dp.total_harga) as value
-    FROM detail_penjualan dp
-    JOIN produk p ON dp.id_produk = p.id
-    JOIN kategori k ON p.id_kategori = k.id
-    WHERE dp.isDeleted = false
-    AND dp.tanggal_penjualan >= ${startDate}
-    AND dp.tanggal_penjualan <= ${endDate}
-    GROUP BY k.nama_kategori
-    ORDER BY value DESC
-    LIMIT 5
-  `;
+  // Get all sales details with product and category info
+  const detailPenjualan = await prisma.detail_penjualan.findMany({
+    where: {
+      isDeleted: false,
+      tanggal_penjualan: {
+        gte: startDate,
+        lte: endDate,
+      },
+    },
+    select: {
+      total_harga: true,
+      produk: {
+        select: {
+          kategori: {
+            select: {
+              id: true,
+              nama_kategori: true,
+            },
+          },
+        },
+      },
+    },
+  });
 
-  return categorySales.map((category) => ({
-    name: category.name,
-    value: Number(category.value),
-  }));
+  // Group by category
+  const categoryMap = new Map();
+
+  detailPenjualan.forEach((item) => {
+    if (!item.produk?.kategori) return;
+
+    const categoryName = item.produk.kategori.nama_kategori;
+    if (!categoryMap.has(categoryName)) {
+      categoryMap.set(categoryName, 0);
+    }
+
+    categoryMap.set(
+      categoryName,
+      categoryMap.get(categoryName) + Number(item.total_harga)
+    );
+  });
+
+  // Convert to array, sort and limit to top 5
+  const categories = Array.from(categoryMap.entries())
+    .map(([name, value]) => ({ name, value: Number(value) }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 5);
+
+  return categories;
 }
 
 export async function getNewestItems(): Promise<NewestItemData[]> {
@@ -215,24 +304,53 @@ export async function getTopCustomers(
   const startDate = new Date(year, 0, 1);
   const endDate = new Date(year, 11, 31, 23, 59, 59);
 
-  const customerData = await prisma.$queryRaw<any[]>`
-    SELECT 
-      p.nama,
-      SUM(pj.total_bayar) as total
-    FROM penjualan pj
-    LEFT JOIN pelanggan p ON pj.id_pelanggan = p.id
-    WHERE pj.isDeleted = false
-    AND pj.tanggal_penjualan >= ${startDate}
-    AND pj.tanggal_penjualan <= ${endDate}
-    GROUP BY p.nama
-    ORDER BY total DESC
-    LIMIT 3
-  `;
+  const customerData = await prisma.penjualan.groupBy({
+    by: ["id_pelanggan"],
+    where: {
+      isDeleted: false,
+      tanggal_penjualan: {
+        gte: startDate,
+        lte: endDate,
+      },
+    },
+    _sum: {
+      total_harga: true,
+    },
+    orderBy: {
+      _sum: {
+        total_harga: "desc",
+      },
+    },
+    take: 3,
+  });
 
-  return customerData.map((customer) => ({
-    nama: customer.nama,
-    total: Number(customer.total),
-  }));
+  // Fetch customer names for the grouped results
+  const customerResults = await Promise.all(
+    customerData.map(async (data) => {
+      if (!data.id_pelanggan) {
+        return {
+          nama: "Umum", // Default name for null id_pelanggan
+          total: Number(data._sum.total_harga || 0),
+        };
+      }
+
+      const customer = await prisma.pelanggan.findUnique({
+        where: {
+          id: data.id_pelanggan,
+        },
+        select: {
+          nama: true,
+        },
+      });
+
+      return {
+        nama: customer?.nama || "Umum",
+        total: Number(data._sum.total_harga || 0),
+      };
+    })
+  );
+
+  return customerResults;
 }
 
 export async function getRecentSales(year: number): Promise<RecentSaleData[]> {
@@ -241,30 +359,70 @@ export async function getRecentSales(year: number): Promise<RecentSaleData[]> {
   const startDate = new Date(year, 0, 1);
   const endDate = new Date(year, 11, 31, 23, 59, 59);
 
-  const salesWithDetails = await prisma.$queryRaw<any[]>`
-    SELECT 
-      p.id,
-      pl.nama as nama_pembeli,
-      (SELECT COUNT(*) FROM detail_penjualan dp WHERE dp.id_penjualan = p.id AND dp.isDeleted = false) as item_count,
-      (SELECT SUM(dp.qty) FROM detail_penjualan dp WHERE dp.id_penjualan = p.id AND dp.isDeleted = false) as total_items,
-      p.total_bayar,
-      p.tanggal_penjualan
-    FROM penjualan p
-    LEFT JOIN pelanggan pl ON p.id_pelanggan = pl.id
-    WHERE p.isDeleted = false
-    AND p.tanggal_penjualan >= ${startDate}
-    AND p.tanggal_penjualan <= ${endDate}
-    ORDER BY p.tanggal_penjualan DESC
-    LIMIT 30
-  `;
+  // Get recent sales
+  const sales = await prisma.penjualan.findMany({
+    where: {
+      isDeleted: false,
+      tanggal_penjualan: {
+        gte: startDate,
+        lte: endDate,
+      },
+    },
+    orderBy: {
+      tanggal_penjualan: "desc",
+    },
+    take: 30,
+    select: {
+      id: true,
+      total_harga: true,
+      diskon: true,
+      penyesuaian: true, // Include penyesuaian
+      tanggal_penjualan: true,
+      pelanggan: {
+        select: {
+          nama: true,
+        },
+      },
+      detail_penjualan: {
+        where: {
+          isDeleted: false,
+        },
+        select: {
+          qty: true,
+          total_harga: true,
+        },
+      },
+    },
+  });
 
-  return salesWithDetails.map((sale) => ({
-    id: sale.id,
-    nama_pembeli: sale.nama_pembeli || "Umum",
-    item_count: Number(sale.total_items) || 0,
-    total_bayar: Number(sale.total_bayar),
-    tanggal_penjualan: sale.tanggal_penjualan,
-  }));
+  // Calculate totals and map to return type
+  return sales.map((sale) => {
+    const itemCount = sale.detail_penjualan.reduce(
+      (sum, detail) => sum + Number(detail.qty),
+      0
+    );
+
+    const totalHarga = sale.detail_penjualan.reduce(
+      (sum, detail) => sum + Number(detail.total_harga),
+      0
+    );
+
+    // Calculate total after applying discounts and adjustments
+    const totalAfterDiscounts =
+      totalHarga - Number(sale.diskon || 0) + Number(sale.penyesuaian || 0);
+
+    return {
+      id: sale.id,
+      nama_pembeli: sale.pelanggan?.nama || "Umum",
+      item_count: itemCount,
+      total_harga: totalHarga,
+      total_setelah_diskon: totalAfterDiscounts, // Add a new field for price after discounts and adjustments
+      // total_harga: Number(sale.total_harga),
+      diskon: Number(sale.diskon || 0),
+      penyesuaian: Number(sale.penyesuaian || 0),
+      tanggal_penjualan: sale.tanggal_penjualan,
+    };
+  });
 }
 
 export type GrowthStats = {
