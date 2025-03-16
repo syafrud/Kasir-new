@@ -71,12 +71,13 @@ model produk {
 }
 
 model stok_management {
-  id        Int       @id @default(autoincrement())
-  id_produk Int
-  stockIN   Int
-  stockOut  Int
-  isDeleted Boolean   @default(false)
-  deletedAt DateTime?
+  id         Int       @id @default(autoincrement())
+  id_produk  Int
+  stockIN    Int
+  stockOut   Int
+  created_at DateTime  @default(now())
+  isDeleted  Boolean   @default(false)
+  deletedAt  DateTime?
 
   produk produk @relation(fields: [id_produk], references: [id], onDelete: Cascade)
 }

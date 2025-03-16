@@ -230,7 +230,6 @@ export default function SalesPage() {
         throw new Error("Failed to get sale ID");
       }
     } catch (error) {
-      console.error("Error processing sale:", error);
       toast.error(
         error instanceof Error
           ? error.message

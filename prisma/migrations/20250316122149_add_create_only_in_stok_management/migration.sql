@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `stok_management` ADD COLUMN `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3);
