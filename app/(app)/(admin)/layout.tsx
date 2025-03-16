@@ -3,7 +3,6 @@ import SidebarLink from "@/components/ui/link";
 import "../../globals.css";
 import {
   LogOut,
-  User,
   LayoutDashboard,
   Shield,
   Users,
@@ -11,7 +10,13 @@ import {
   Boxes,
   Package,
   ShoppingCart,
-  PanelLeft,
+  FileText,
+  BarChartBig,
+  Receipt,
+  ClipboardList,
+  Store,
+  ShoppingBag,
+  Menu,
 } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
@@ -52,19 +57,12 @@ export default function DashboardLayout({
             onClick={toggleSidebar}
             className="text-white p-2 rounded-md  transition"
           >
-            <PanelLeft size={24} />
+            <Menu size={24} />
           </button>
         </div>
 
         <div className="flex justify-end items-center w-full px-5">
           <div className="flex items-center gap-4">
-            <a
-              href="#"
-              className="text-white flex items-center gap-2 hover:underline"
-            >
-              <User size={20} />
-              Profile
-            </a>
             <a
               href="#"
               className="text-white flex items-center gap-2 hover:underline"
@@ -78,13 +76,13 @@ export default function DashboardLayout({
 
       {/* Sidebar */}
       <div
-        className={`sidebar fixed top-[62px] left-0 h-screen ${
+        className={`sidebar fixed top-[62px] left-0 h-[calc(100vh-62px)] ${
           isSidebarExpanded || isHovering ? "w-[225px]" : "w-[70px]"
-        } bg-[#ffffff] flex flex-col gap-6 py-5 px-3 overflow-y-auto no-scrollbar transition-all duration-300 shadow-xl z-20`}
+        } bg-[#ffffff] flex flex-col py-5 px-3 overflow-y-auto transition-all duration-300 shadow-xl z-20`}
         onMouseEnter={() => setHovering(true)}
         onMouseLeave={() => setHovering(false)}
       >
-        <ul className="flex flex-col gap-3">
+        <ul className="flex flex-col gap-2">
           <li className="px-1">
             {isSidebarExpanded || isHovering ? (
               <div className="text-2xl font-bold text-center">
@@ -97,23 +95,14 @@ export default function DashboardLayout({
                 <span className="text-[#E79B2C]">P</span>
               </div>
             )}
-            <div className="border-b-2 border-gray-300 mt-1 mb-2 "></div>
-            <div
-              className={`text-[#485371] font-bold text-center uppercase px-2 ${
-                isSidebarExpanded || isHovering ? "hidden" : "block"
-              }`}
-            >
-              <LayoutDashboard size={20} />
-            </div>
-            <div
-              className={`text-[#485371] font-bold ${
-                isSidebarExpanded || isHovering ? "block" : "hidden"
-              }`}
-            >
-              Dashboard
-            </div>
+            <div className="border-b-2 border-gray-300 mt-1 mb-2"></div>
           </li>
-
+          <SidebarLink
+            href="/dashboard"
+            icon={<LayoutDashboard size={20} />}
+            label="Dashboard"
+            isExpanded={isSidebarExpanded || isHovering}
+          />
           <SidebarLink
             href="/penjualan"
             icon={<ShoppingCart size={20} />}
@@ -122,12 +111,12 @@ export default function DashboardLayout({
           />
           <Accordion
             title="Produk"
-            icon={<Package size={20} />}
+            icon={<ShoppingBag size={20} />}
             isExpanded={isSidebarExpanded || isHovering}
           >
             <SidebarALink
               href="/produk"
-              icon={<Boxes size={20} />}
+              icon={<Package size={20} />}
               label="Produk"
               isExpanded={isSidebarExpanded || isHovering}
             />
@@ -137,22 +126,52 @@ export default function DashboardLayout({
               label="Kategori Produk"
               isExpanded={isSidebarExpanded || isHovering}
             />
+            <SidebarALink
+              href="/barcode"
+              icon={<ClipboardList size={20} />}
+              label="Cetak Barcode"
+              isExpanded={isSidebarExpanded || isHovering}
+            />
           </Accordion>
           <Accordion
             title="Laporan"
-            icon={<Package size={20} />}
+            icon={<FileText size={20} />}
             isExpanded={isSidebarExpanded || isHovering}
           >
             <SidebarALink
               href="/laporan"
-              icon={<Boxes size={20} />}
+              icon={<BarChartBig size={20} />}
               label="Laporan Penjualan"
               isExpanded={isSidebarExpanded || isHovering}
             />
             <SidebarALink
               href="/laporan/per-item"
-              icon={<Tags size={20} />}
+              icon={<Boxes size={20} />}
               label="Laporan Penjualan Per Item"
+              isExpanded={isSidebarExpanded || isHovering}
+            />
+          </Accordion>
+          <Accordion
+            title="Kasir/Pos"
+            icon={<Store size={20} />}
+            isExpanded={isSidebarExpanded || isHovering}
+          >
+            <SidebarALink
+              href="/pos"
+              icon={<ShoppingCart size={20} />}
+              label="Kasir"
+              isExpanded={isSidebarExpanded || isHovering}
+            />
+            <SidebarALink
+              href="/pos/invoice"
+              icon={<Receipt size={20} />}
+              label="Invoice"
+              isExpanded={isSidebarExpanded || isHovering}
+            />
+            <SidebarALink
+              href="/pos/produk"
+              icon={<Package size={20} />}
+              label="Stock Produk"
               isExpanded={isSidebarExpanded || isHovering}
             />
           </Accordion>

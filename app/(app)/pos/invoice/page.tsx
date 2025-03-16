@@ -37,7 +37,7 @@ interface Invoice {
   penyesuaian: number;
   id_pelanggan?: number;
   items?: InvoiceItem[];
-  tanggal_penjualan: string;
+  tanggal_penjualan: string | Date;
 }
 
 interface Customer {
@@ -432,7 +432,7 @@ export default function SalesPage() {
       const dateValue = editedInvoice.tanggal_penjualan
         ? typeof editedInvoice.tanggal_penjualan === "string"
           ? editedInvoice.tanggal_penjualan
-          : editedInvoice.tanggal_penjualan.toISOString()
+          : new Date(editedInvoice.tanggal_penjualan as any).toISOString()
         : new Date().toISOString();
       formData.append("tanggal_penjualan", dateValue);
 
@@ -621,6 +621,28 @@ export default function SalesPage() {
 
   const formatCurrency = (amount: number) => {
     return `Rp ${amount.toLocaleString()}`;
+  };
+
+  // Add this function in your component
+  const formatDateForInput = (date: Date | string | undefined): string => {
+    if (!date) return "";
+
+    if (typeof date === "string") {
+      // Check if it's already in YYYY-MM-DD format
+      if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return date;
+      }
+
+      // Otherwise try to parse and format it
+      const parsedDate = new Date(date);
+      if (!isNaN(parsedDate.getTime())) {
+        return format(parsedDate, "yyyy-MM-dd");
+      }
+      return "";
+    }
+
+    // If it's a Date object
+    return format(date, "yyyy-MM-dd");
   };
 
   return (
@@ -946,7 +968,9 @@ export default function SalesPage() {
                     <input
                       type="date"
                       className="border p-1 w-full"
-                      value={editedInvoice?.tanggal_penjualan || ""}
+                      value={formatDateForInput(
+                        editedInvoice?.tanggal_penjualan
+                      )}
                       onChange={(e) =>
                         handleInvoiceChange("tanggal_penjualan", e.target.value)
                       }
