@@ -33,12 +33,10 @@ export async function GET(request: Request) {
       };
     }
 
-    // Get total count of matching items
     const totalItems = await prisma.penjualan.count({
       where,
     });
 
-    // Get all sales for total calculations (without pagination)
     const allSales = await prisma.penjualan.findMany({
       where,
       include: {
@@ -55,7 +53,6 @@ export async function GET(request: Request) {
       },
     });
 
-    // Calculate totals from all sales
     const totalPenjualan = allSales.reduce((sum, sale) => {
       return sum + Number(sale.total_harga);
     }, 0);
@@ -71,7 +68,6 @@ export async function GET(request: Request) {
       );
     }, 0);
 
-    // Get paginated sales for display
     const paginatedSales = await prisma.penjualan.findMany({
       where,
       include: {
@@ -144,8 +140,8 @@ export async function GET(request: Request) {
     return NextResponse.json({
       sales: formattedSales,
       total: totalItems,
-      totalPenjualan: totalPenjualan, // Pass total sales amount
-      totalUntung: totalUntung, // Pass total profit amount
+      totalPenjualan: totalPenjualan,
+      totalUntung: totalUntung,
       customers: customers.map((c) => c.nama),
     });
   } catch (error) {

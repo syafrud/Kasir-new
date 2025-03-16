@@ -614,17 +614,14 @@ export default function SalesPage() {
     return `Rp ${amount.toLocaleString()}`;
   };
 
-  // Add this function in your component
   const formatDateForInput = (date: Date | string | undefined): string => {
     if (!date) return "";
 
     if (typeof date === "string") {
-      // Check if it's already in YYYY-MM-DD format
       if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
         return date;
       }
 
-      // Otherwise try to parse and format it
       const parsedDate = new Date(date);
       if (!isNaN(parsedDate.getTime())) {
         return format(parsedDate, "yyyy-MM-dd");
@@ -632,7 +629,6 @@ export default function SalesPage() {
       return "";
     }
 
-    // If it's a Date object
     return format(date, "yyyy-MM-dd");
   };
 

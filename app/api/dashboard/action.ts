@@ -142,7 +142,6 @@ export async function getTopProducts(year: number): Promise<TopProductData[]> {
   const startDate = new Date(year, 0, 1);
   const endDate = new Date(year, 11, 31, 23, 59, 59);
 
-  // First get all product sales for the year
   const detailPenjualan = await prisma.detail_penjualan.findMany({
     where: {
       isDeleted: false,
@@ -155,7 +154,7 @@ export async function getTopProducts(year: number): Promise<TopProductData[]> {
       id_produk: true,
       qty: true,
       harga_jual: true,
-      total_harga: true, // This should already account for line-level discounts
+      total_harga: true,
       produk: {
         select: {
           id: true,
@@ -165,7 +164,6 @@ export async function getTopProducts(year: number): Promise<TopProductData[]> {
     },
   });
 
-  // Group by product and calculate totals
   const productMap = new Map();
 
   detailPenjualan.forEach((item) => {
@@ -177,7 +175,7 @@ export async function getTopProducts(year: number): Promise<TopProductData[]> {
         harga_jual: 0,
         qty: 0,
         total: 0,
-        count: 0, // To calculate average price
+        count: 0,
       });
     }
 
@@ -188,7 +186,6 @@ export async function getTopProducts(year: number): Promise<TopProductData[]> {
     product.count += 1;
   });
 
-  // Calculate average price and prepare result
   let productSales = Array.from(productMap.values()).map((product) => ({
     id: product.id,
     nama_produk: product.nama_produk,
@@ -197,16 +194,13 @@ export async function getTopProducts(year: number): Promise<TopProductData[]> {
     total: Number(product.total),
   }));
 
-  // Sort by total sales and limit to top 30
   productSales = productSales.sort((a, b) => b.total - a.total).slice(0, 5);
 
-  // Calculate total sales for contribution percentage
   const totalSales = productSales.reduce(
     (sum, product) => sum + product.total,
     0
   );
 
-  // Add contribution percentage
   return productSales.map((product) => ({
     ...product,
     kontribusi: totalSales ? Math.round((product.total / totalSales) * 100) : 0,
@@ -219,7 +213,6 @@ export async function getCategoryData(year: number): Promise<CategoryData[]> {
   const startDate = new Date(year, 0, 1);
   const endDate = new Date(year, 11, 31, 23, 59, 59);
 
-  // Get all sales details with product and category info
   const detailPenjualan = await prisma.detail_penjualan.findMany({
     where: {
       isDeleted: false,
@@ -243,7 +236,6 @@ export async function getCategoryData(year: number): Promise<CategoryData[]> {
     },
   });
 
-  // Group by category
   const categoryMap = new Map();
 
   detailPenjualan.forEach((item) => {
@@ -260,7 +252,6 @@ export async function getCategoryData(year: number): Promise<CategoryData[]> {
     );
   });
 
-  // Convert to array, sort and limit to top 5
   const categories = Array.from(categoryMap.entries())
     .map(([name, value]) => ({ name, value: Number(value) }))
     .sort((a, b) => b.value - a.value)
@@ -284,7 +275,7 @@ export async function getNewestItems(): Promise<NewestItemData[]> {
       id: true,
       nama_produk: true,
       harga_jual: true,
-      created_at: true, // Tambahkan ini
+      created_at: true,
     },
   });
 
@@ -324,12 +315,11 @@ export async function getTopCustomers(
     take: 3,
   });
 
-  // Fetch customer names for the grouped results
   const customerResults = await Promise.all(
     customerData.map(async (data) => {
       if (!data.id_pelanggan) {
         return {
-          nama: "Umum", // Default name for null id_pelanggan
+          nama: "Umum",
           total: Number(data._sum.total_harga || 0),
         };
       }
@@ -359,7 +349,6 @@ export async function getRecentSales(year: number): Promise<RecentSaleData[]> {
   const startDate = new Date(year, 0, 1);
   const endDate = new Date(year, 11, 31, 23, 59, 59);
 
-  // Get recent sales
   const sales = await prisma.penjualan.findMany({
     where: {
       isDeleted: false,
@@ -376,7 +365,7 @@ export async function getRecentSales(year: number): Promise<RecentSaleData[]> {
       id: true,
       total_harga: true,
       diskon: true,
-      penyesuaian: true, // Include penyesuaian
+      penyesuaian: true,
       tanggal_penjualan: true,
       pelanggan: {
         select: {
@@ -395,7 +384,6 @@ export async function getRecentSales(year: number): Promise<RecentSaleData[]> {
     },
   });
 
-  // Calculate totals and map to return type
   return sales.map((sale) => {
     const itemCount = sale.detail_penjualan.reduce(
       (sum, detail) => sum + Number(detail.qty),
@@ -407,7 +395,6 @@ export async function getRecentSales(year: number): Promise<RecentSaleData[]> {
       0
     );
 
-    // Calculate total after applying discounts and adjustments
     const totalAfterDiscounts =
       totalHarga - Number(sale.diskon || 0) + Number(sale.penyesuaian || 0);
 
@@ -416,8 +403,7 @@ export async function getRecentSales(year: number): Promise<RecentSaleData[]> {
       nama_pembeli: sale.pelanggan?.nama || "Umum",
       item_count: itemCount,
       total_harga: totalHarga,
-      total_setelah_diskon: totalAfterDiscounts, // Add a new field for price after discounts and adjustments
-      // total_harga: Number(sale.total_harga),
+      total_setelah_diskon: totalAfterDiscounts,
       diskon: Number(sale.diskon || 0),
       penyesuaian: Number(sale.penyesuaian || 0),
       tanggal_penjualan: sale.tanggal_penjualan,
@@ -466,7 +452,6 @@ export async function getGrowthStats(year: number): Promise<GrowthStats> {
 export async function getAvailableYears(): Promise<number[]> {
   noStore();
 
-  // Get the earliest and latest transaction years
   const earliestTransaction = await prisma.penjualan.findFirst({
     where: {
       isDeleted: false,
@@ -491,7 +476,6 @@ export async function getAvailableYears(): Promise<number[]> {
     },
   });
 
-  // If no transactions, return current year
   if (!earliestTransaction || !latestTransaction) {
     return [new Date().getFullYear()];
   }
@@ -499,7 +483,6 @@ export async function getAvailableYears(): Promise<number[]> {
   const startYear = earliestTransaction.tanggal_penjualan.getFullYear();
   const endYear = latestTransaction.tanggal_penjualan.getFullYear();
 
-  // Generate array of years from latest to earliest
   const years: number[] = [];
   for (let year = endYear; year >= startYear; year--) {
     years.push(year);

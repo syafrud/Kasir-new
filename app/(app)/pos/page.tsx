@@ -231,7 +231,6 @@ export default function SalesPage() {
       }
     } catch (error) {
       console.error("Error processing sale:", error);
-      // Tampilkan pesan error yang lebih spesifik
       toast.error(
         error instanceof Error
           ? error.message

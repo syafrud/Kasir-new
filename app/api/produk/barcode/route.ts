@@ -12,7 +12,6 @@ export async function GET() {
       },
     });
 
-    // Konversi Decimal ke String
     const formattedProducts = products.map((product) => ({
       ...product,
       harga_jual: product.harga_jual.toString(),

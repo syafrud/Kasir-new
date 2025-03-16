@@ -211,7 +211,6 @@ export default function Dashboard() {
         ],
       };
 
-      // Create new chart
       categoryChartInstance.current = new Chart(ctx, {
         type: "doughnut",
         data: chartData,
@@ -243,7 +242,6 @@ export default function Dashboard() {
       const products = await getTopProducts(year);
       setTopProducts(products);
 
-      // Update the pie chart after fetching data
       updateTopProductsChart(products);
     } catch (error) {
       console.error("Failed to load top products data:", error);
@@ -270,7 +268,6 @@ export default function Dashboard() {
       const categories = await getCategoryData(year);
       setCategoryData(categories);
 
-      // Update the donut chart after fetching data
       updateCategoryChart(categories);
     } catch (error) {
       console.error("Failed to load category table data:", error);
@@ -340,7 +337,6 @@ export default function Dashboard() {
     loadNewestItemsData();
   }, []);
 
-  // Call all functions on initial load
   useEffect(() => {
     loadStatsData(statsYear);
     loadTopProductsData(topProductsYear);
@@ -377,13 +373,12 @@ export default function Dashboard() {
 
   const [productsPage, setProductsPage] = useState(1);
   const [salesPage, setSalesPage] = useState(1);
-  const productsItemsPerPage = topProducts.length; // Show all products
-  const salesItemsPerPage = 5; // Keep original item count for sales
+  const productsItemsPerPage = topProducts.length;
+  const salesItemsPerPage = 5;
 
   const paginatedProducts = filteredProducts;
   const totalProductPages = 1;
 
-  // Update the pagination for sales
   const paginatedSales = filteredSales.slice(
     (salesPage - 1) * salesItemsPerPage,
     salesPage * salesItemsPerPage
@@ -400,7 +395,6 @@ export default function Dashboard() {
     }
   }, [topProducts, loadingTopProducts, topProductsYear]);
 
-  // Add a new useEffect specifically for updating the category chart
   useEffect(() => {
     if (
       categoryChartRef.current &&

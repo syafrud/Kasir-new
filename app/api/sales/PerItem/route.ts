@@ -17,7 +17,6 @@ export async function GET(request: Request) {
     const customerId = searchParams.get("customerId");
     const skip = (page - 1) * limit;
 
-    // Build the where clause
     const whereClause: any = {
       tanggal_penjualan: {
         gte: new Date(`${startDate}T00:00:00`),
@@ -26,7 +25,6 @@ export async function GET(request: Request) {
       isDeleted: false,
     };
 
-    // Add customer filter if specified
     const salesData = await prisma.detail_penjualan.findMany({
       where: whereClause,
       include: {
@@ -39,7 +37,6 @@ export async function GET(request: Request) {
       },
     });
 
-    // Filter by customer ID if specified
     const filteredSales =
       customerId && customerId !== "Semua"
         ? salesData.filter(
