@@ -15,6 +15,8 @@ import Image from "next/image";
 import { PrintInvoice } from "@/components/print/PrintInvoice";
 import { NotaPrint } from "@/components/print/NotaPrint";
 import { CircleEllipsis, Printer, SquarePen, X } from "lucide-react";
+import PelangganSearch from "@/components/search/pelangganSearch";
+import UserSearch from "@/components/search/userSearch";
 
 interface Penjualan {
   id: number;
@@ -421,6 +423,11 @@ export default function PenjualanPage() {
       return;
     }
 
+    if (!formData.id_user) {
+      toast.error("Silakan pilih petugas sebelum melanjutkan.");
+      return;
+    }
+
     const totalBayar = parseInt(formData.total_bayar || "0", 10);
     const totalHarga = parseInt(formData.total_harga || "0", 10);
 
@@ -752,25 +759,15 @@ export default function PenjualanPage() {
               <form onSubmit={handleFormSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2 md:col-span-1">
-                    <label className="block text-gray-700 font-medium text-sm">
-                      Nama Petugas
-                    </label>
-                    <select
-                      name="id_user"
-                      className="border rounded-lg p-2 w-full mt-1"
-                      value={formData.id_user}
-                      onChange={handleInputChange}
-                      required
-                    >
-                      <option value="" disabled>
-                        Pilih Petugas
-                      </option>
-                      {userOptions.map((user) => (
-                        <option key={user.id} value={user.id}>
-                          {user.username}
-                        </option>
-                      ))}
-                    </select>
+                    <UserSearch
+                      onSelect={(user) => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          id_user: user.id.toString(),
+                        }));
+                      }}
+                      selectedId={formData.id_user}
+                    />
                   </div>
 
                   <div className="col-span-2 md:col-span-1">
@@ -791,24 +788,15 @@ export default function PenjualanPage() {
 
                 {isPelanggan && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Pilih Pelanggan
-                    </label>
-                    <select
-                      name="id_pelanggan"
-                      value={formData.id_pelanggan}
-                      onChange={handleInputChange}
-                      className="border rounded-lg p-2 w-full mt-1"
-                    >
-                      <option value="" disabled>
-                        Pilih Pelanggan
-                      </option>
-                      {pelangganOptions.map((pelanggan) => (
-                        <option key={pelanggan.id} value={pelanggan.id}>
-                          {pelanggan.nama}
-                        </option>
-                      ))}
-                    </select>
+                    <PelangganSearch
+                      onSelect={(pelanggan) => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          id_pelanggan: pelanggan.id.toString(),
+                        }));
+                      }}
+                      selectedId={formData.id_pelanggan}
+                    />
                   </div>
                 )}
 

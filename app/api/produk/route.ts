@@ -4,62 +4,51 @@ import prisma from "@/lib/db";
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
+    const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get("search") || "";
     const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "5");
+    const limit = parseInt(searchParams.get("limit") || "10");
     const skip = (page - 1) * limit;
 
-    const showDeleted = searchParams.get("showDeleted") === "true";
-
-    const baseCondition = search
-      ? {
+    // Modified query to search in both product name and category name
+    const [produk, totalCount] = await Promise.all([
+      prisma.produk.findMany({
+        where: {
           OR: [
-            {
-              nama_produk: {
-                contains: search.trim().toLowerCase(),
-              },
-            },
-            {
-              barcode: {
-                contains: search.trim(),
-              },
-            },
+            { nama_produk: { contains: search } },
+            { kategori: { nama_kategori: { contains: search } } },
           ],
-        }
-      : {};
-
-    const whereCondition = {
-      ...baseCondition,
-      ...(showDeleted ? {} : { isDeleted: false }),
-    };
-
-    const totalCount = await prisma.produk.count({
-      where: whereCondition,
-    });
-
-    const produk = await prisma.produk.findMany({
-      where: whereCondition,
-      include: {
-        kategori: {
-          select: { nama_kategori: true },
+          isDeleted: false,
         },
-        detail_penjualan: {
-          select: {
-            qty: true,
+        include: {
+          kategori: {
+            select: {
+              nama_kategori: true,
+            },
           },
         },
-      },
-      orderBy: { id: "asc" },
-      skip,
-      take: limit,
-    });
+        skip,
+        take: limit,
+        orderBy: { id: "desc" },
+      }),
+      prisma.produk.count({
+        where: {
+          OR: [
+            { nama_produk: { contains: search } },
+            { kategori: { nama_kategori: { contains: search } } },
+          ],
+          isDeleted: false,
+        },
+      }),
+    ]);
+
+    const totalPages = Math.ceil(totalCount / limit);
 
     return NextResponse.json(
       {
         produk,
         totalCount,
-        totalPages: Math.ceil(totalCount / limit),
+        totalPages,
         currentPage: page,
       },
       { status: 200 }

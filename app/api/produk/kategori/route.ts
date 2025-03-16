@@ -1,10 +1,23 @@
+// app/api/produk/kategori/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db";
-import { Search } from "lucide-react";
 
 export async function GET(request: NextRequest) {
   try {
+    const searchParams = request.nextUrl.searchParams;
+    const search = searchParams.get("search") || "";
+
     const kategori = await prisma.kategori.findMany({
+      where: {
+        isDeleted: false,
+        ...(search
+          ? {
+              nama_kategori: {
+                contains: search,
+              },
+            }
+          : {}),
+      },
       orderBy: { id: "asc" },
     });
 

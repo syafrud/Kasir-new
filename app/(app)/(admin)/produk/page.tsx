@@ -12,6 +12,7 @@ import toast from "react-hot-toast";
 import { Plus, Upload, Image as ImageIcon } from "lucide-react";
 import RupiahInput from "@/components/RupiahInput";
 import Image from "next/image";
+import SearchableSelect from "@/components/SearchableSelect";
 
 interface Produk {
   id: number;
@@ -506,23 +507,18 @@ export default function ProdukPage() {
                   <label className="block text-base font-medium text-gray-700">
                     Kategori
                   </label>
-                  <select
-                    name="id_kategori"
-                    className="border p-2 rounded w-full mt-2"
-                    value={formData.id_kategori}
-                    onChange={handleInputChange}
-                    required
-                  >
-                    <option value="" disabled>
-                      Pilih Kategori
-                    </option>
-                    {Array.isArray(kategoriOptions) &&
-                      kategoriOptions.map((kategori) => (
-                        <option key={kategori.id} value={kategori.id}>
-                          {kategori.nama_kategori}
-                        </option>
-                      ))}
-                  </select>
+                  <div className="mt-2">
+                    <SearchableSelect
+                      options={kategoriOptions}
+                      value={formData.id_kategori}
+                      onChange={(value) =>
+                        setFormData({ ...formData, id_kategori: value })
+                      }
+                      placeholder="Pilih Kategori"
+                      name="id_kategori"
+                      required={true}
+                    />
+                  </div>
                 </div>
                 <div className="w-full min-w-sm items-center">
                   <label className="block text-base font-medium text-gray-700">
