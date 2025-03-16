@@ -502,22 +502,10 @@ export default function Dashboard() {
           {/* Product Sales Table */}
           <div className="lg:col-span-3 bg-white rounded-lg shadow-md p-4  border-t-4 border-[#007bff] border-2">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold">
+              <h2 className="text-lg font-semibold ">
                 Penjualan Barang Terbesar
               </h2>
-            </div>
 
-            <div className="flex mb-4 flex-row justify-between">
-              <div className="flex items-center">
-                <span className="mr-2">Search:</span>
-                <input
-                  type="text"
-                  className="border rounded px-2 py-1"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search products..."
-                />
-              </div>
               <div className="relative">
                 <div
                   className="flex items-center border rounded px-2 py-1 cursor-pointer"
@@ -600,73 +588,6 @@ export default function Dashboard() {
                 </table>
               </div>
             )}
-
-            <div className="flex justify-between items-center mt-4">
-              <div>
-                <span className="text-sm">
-                  Showing{" "}
-                  {filteredProducts.length > 0
-                    ? (productsPage - 1) * productsItemsPerPage + 1
-                    : 0}{" "}
-                  to{" "}
-                  {Math.min(
-                    productsPage * productsItemsPerPage,
-                    filteredProducts.length
-                  )}{" "}
-                  of {filteredProducts.length} entries
-                </span>
-              </div>
-              <div className="flex">
-                <button
-                  className={`px-3 py-1 border rounded mr-1 ${
-                    productsPage === 1 ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
-                  onClick={() =>
-                    setProductsPage((prev) => Math.max(prev - 1, 1))
-                  }
-                  disabled={productsPage === 1}
-                >
-                  PREVIOUS
-                </button>
-                {Array.from(
-                  { length: Math.min(totalProductPages, 3) },
-                  (_, i) => {
-                    const pageNum = i + Math.max(1, productsPage - 1);
-                    if (pageNum <= totalProductPages) {
-                      return (
-                        <button
-                          key={pageNum}
-                          className={`px-3 py-1 border ${
-                            productsPage === pageNum
-                              ? "bg-blue-500 text-white"
-                              : ""
-                          } rounded mr-1`}
-                          onClick={() => setProductsPage(pageNum)}
-                        >
-                          {pageNum}
-                        </button>
-                      );
-                    }
-                    return null;
-                  }
-                )}
-                <button
-                  className={`px-3 py-1 border rounded ${
-                    productsPage === totalProductPages
-                      ? "opacity-50 cursor-not-allowed"
-                      : ""
-                  }`}
-                  onClick={() =>
-                    setProductsPage((prev) =>
-                      Math.min(prev + 1, totalProductPages)
-                    )
-                  }
-                  disabled={productsPage === totalProductPages}
-                >
-                  NEXT
-                </button>
-              </div>
-            </div>
           </div>
 
           {/* Pie Chart */}
