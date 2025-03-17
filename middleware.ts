@@ -10,11 +10,13 @@ export async function middleware(req: NextRequest) {
 
   const roleBasedPaths: Record<string, string[]> = {
     "/dashboard": ["ADMIN"],
-    "/penjualan": ["ADMIN"],
-    "/produk": ["ADMIN"],
+    "/barcode": ["ADMIN"],
     "/kategori-produk": ["ADMIN"],
     "/laporan": ["ADMIN"],
     "/pelanggan": ["ADMIN"],
+    "/penjualan": ["ADMIN"],
+    "/produk": ["ADMIN"],
+    "/stock-history": ["ADMIN"],
     "/users": ["ADMIN"],
     "/pos": ["ADMIN", "PETUGAS"],
   };
