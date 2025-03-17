@@ -428,6 +428,14 @@ export default function PenjualanPage() {
       return;
     }
 
+    if (selectedProduk.length === 0) {
+      setError(
+        "Silakan pilih setidaknya satu produk sebelum melakukan penjualan."
+      );
+      toast.error("Silakan pilih setidaknya satu produk.");
+      return;
+    }
+
     const totalBayar = parseInt(formData.total_bayar || "0", 10);
     const totalHarga = parseInt(formData.total_harga || "0", 10);
 
@@ -511,16 +519,6 @@ export default function PenjualanPage() {
     });
     setSelectedProduk([]);
     setIsModalOpen(true);
-  };
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
   };
 
   const handleModalClose = () => {

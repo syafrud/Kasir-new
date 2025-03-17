@@ -79,7 +79,7 @@ export async function getStats(year: number): Promise<StatsData> {
     },
   });
 
-  const detailPenjualanResult = await prisma.detail_penjualan.aggregate({
+  const PenjualanResult = await prisma.penjualan.aggregate({
     _sum: {
       total_harga: true,
     },
@@ -92,25 +92,9 @@ export async function getStats(year: number): Promise<StatsData> {
     },
   });
 
-  const penjualanAggregates = await prisma.penjualan.aggregate({
-    _sum: {
-      diskon: true,
-      penyesuaian: true,
-    },
-    where: {
-      isDeleted: false,
-      tanggal_penjualan: {
-        gte: startDate,
-        lte: endDate,
-      },
-    },
-  });
+  const totalHarga = Number(PenjualanResult._sum.total_harga || 0);
 
-  const totalDiskon = Number(penjualanAggregates._sum.diskon || 0);
-  const totalPenyesuaian = Number(penjualanAggregates._sum.penyesuaian || 0);
-  const totalHarga = Number(detailPenjualanResult._sum.total_harga || 0);
-
-  const totalIncome = totalHarga - totalDiskon + totalPenyesuaian;
+  const totalIncome = totalHarga;
 
   const activeCustomers = await prisma.pelanggan.count({
     where: {
