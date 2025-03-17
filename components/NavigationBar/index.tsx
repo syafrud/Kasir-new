@@ -3,11 +3,14 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogoutButton } from "@/app/auth";
-import { LogOut } from "lucide-react";
+import { LogOut, ArrowLeft } from "lucide-react";
+import { signOut, useSession } from "next-auth/react";
 
 const NavigationBar: React.FC = () => {
   const pathname = usePathname();
+  const { data: session } = useSession();
+
+  const isAdmin = session?.user?.role === "ADMIN";
 
   const isActive = (path: string) => {
     return pathname === path;
@@ -15,6 +18,15 @@ const NavigationBar: React.FC = () => {
 
   return (
     <div className="flex w-full h-16">
+      {isAdmin && (
+        <Link
+          href="/dashboard"
+          className="flex items-center justify-center text-white transition-colors bg-gray-600 hover:bg-gray-700 px-4"
+        >
+          <ArrowLeft size={20} className="mr-1" />
+          <span>Dashboard</span>
+        </Link>
+      )}
       <Link
         href="/pos"
         className={`w-1/3 flex items-center justify-center text-white transition-colors ${
@@ -45,12 +57,12 @@ const NavigationBar: React.FC = () => {
       >
         <span>Stock Produk</span>
       </Link>
-      <div className="flex justify-center items-center h-full px-5 bg-red-500">
-        <a href="#" className="text-white flex items-center gap-2 ">
-          <LogOut size={20} />
-          <LogoutButton />
-        </a>
-      </div>
+      <button
+        className="flex justify-center items-center h-full px-5 bg-red-500"
+        onClick={() => signOut()}
+      >
+        <LogOut size={20} />
+      </button>
     </div>
   );
 };

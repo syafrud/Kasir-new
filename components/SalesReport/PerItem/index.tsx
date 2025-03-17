@@ -99,7 +99,7 @@ const PerItemSalesReportPDF = ({
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        <Text style={styles.title}>PT Indokasir Demo</Text>
+        <Text style={styles.title}>PT KasirPintar</Text>
         <Text style={styles.header}>
           Laporan Penjualan Per Item {"\n"}
           Periode: {startDateStr} s.d. {endDateStr}
@@ -108,17 +108,20 @@ const PerItemSalesReportPDF = ({
         <View style={styles.table}>
           <View style={styles.tableRow}>
             <Text style={[styles.tableHeaderCell, { width: "5%" }]}>No</Text>
-            <Text style={[styles.tableHeaderCell, { width: "25%" }]}>
+            <Text style={[styles.tableHeaderCell, { width: "20%" }]}>
               Nama Barang
             </Text>
-            <Text style={[styles.tableHeaderCell, { width: "15%" }]}>
-              Harga Satuan
+            <Text style={[styles.tableHeaderCell, { width: "12%" }]}>
+              Harga Satuan Beli
             </Text>
-            <Text style={[styles.tableHeaderCell, { width: "15%" }]}>
+            <Text style={[styles.tableHeaderCell, { width: "12%" }]}>
+              Harga Satuan Jual
+            </Text>
+            <Text style={[styles.tableHeaderCell, { width: "10%" }]}>
               Qty Terjual
             </Text>
-            <Text style={[styles.tableHeaderCell, { width: "15%" }]}>Neto</Text>
-            <Text style={[styles.tableHeaderCell, { width: "15%" }]}>
+            <Text style={[styles.tableHeaderCell, { width: "12%" }]}>Neto</Text>
+            <Text style={[styles.tableHeaderCell, { width: "12%" }]}>
               Untung
             </Text>
             <Text style={[styles.tableHeaderCell, { width: "10%" }]}>
@@ -131,19 +134,22 @@ const PerItemSalesReportPDF = ({
               <Text style={[styles.tableCell, { width: "5%" }]}>
                 {index + 1}
               </Text>
-              <Text style={[styles.tableCell, { width: "25%" }]}>
+              <Text style={[styles.tableCell, { width: "20%" }]}>
                 {item.nama_barang}
               </Text>
-              <Text style={[styles.tableCell, { width: "15%" }]}>
-                {item.harga_satuan.toLocaleString()}
+              <Text style={[styles.tableCell, { width: "12%" }]}>
+                {item.harga_satuan_beli.toLocaleString()}
               </Text>
-              <Text style={[styles.tableCell, { width: "15%" }]}>
+              <Text style={[styles.tableCell, { width: "12%" }]}>
+                {item.harga_satuan_jual.toLocaleString()}
+              </Text>
+              <Text style={[styles.tableCell, { width: "10%" }]}>
                 {item.qty_terjual}
               </Text>
-              <Text style={[styles.tableCell, { width: "15%" }]}>
+              <Text style={[styles.tableCell, { width: "12%" }]}>
                 {item.neto.toLocaleString()}
               </Text>
-              <Text style={[styles.tableCell, { width: "15%" }]}>
+              <Text style={[styles.tableCell, { width: "12%" }]}>
                 {item.untung.toLocaleString()}
               </Text>
               <Text style={[styles.tableCell, { width: "10%" }]}>
@@ -267,7 +273,8 @@ const PerItemSalesReport = () => {
       ...salesData,
       {
         nama_barang: "TOTAL",
-        harga_satuan: 0,
+        harga_satuan_beli: 0,
+        harga_satuan_jual: 0,
         qty_terjual: summary.total_qty,
         neto: summary.total_penjualan,
         untung: summary.total_untung,
@@ -281,6 +288,7 @@ const PerItemSalesReport = () => {
         { wch: 30 },
         { wch: 15 },
         { wch: 15 },
+        { wch: 10 },
         { wch: 15 },
         { wch: 15 },
         { wch: 15 },
@@ -462,7 +470,8 @@ const PerItemSalesReport = () => {
             <tr className="bg-gray-200">
               <th className="p-2 border">No</th>
               <th className="p-2 border">Nama Barang</th>
-              <th className="p-2 border">Harga Satuan</th>
+              <th className="p-2 border">Harga Satuan Beli</th>
+              <th className="p-2 border">Harga Satuan Jual</th>
               <th className="p-2 border">Qty Terjual</th>
               <th className="p-2 border">Neto</th>
               <th className="p-2 border">Untung (Rugi)</th>
@@ -475,7 +484,10 @@ const PerItemSalesReport = () => {
                 <td className="p-2 border text-center">{index + 1}</td>
                 <td className="p-2 border">{item.nama_barang}</td>
                 <td className="p-2 border text-right">
-                  {item.harga_satuan.toLocaleString()}
+                  {item.harga_satuan_beli.toLocaleString()}
+                </td>
+                <td className="p-2 border text-right">
+                  {item.harga_satuan_jual.toLocaleString()}
                 </td>
                 <td className="p-2 border text-center">{item.qty_terjual}</td>
                 <td className="p-2 border text-right">

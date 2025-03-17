@@ -49,7 +49,8 @@ export async function GET(request: Request) {
       if (!acc[id]) {
         acc[id] = {
           nama_barang: nama_produk,
-          harga_satuan: Number(harga_jual),
+          harga_satuan_beli: Number(harga_beli),
+          harga_satuan_jual: Number(harga_jual),
           qty_terjual: 0,
           neto: 0,
           untung: 0,
@@ -68,7 +69,8 @@ export async function GET(request: Request) {
       .slice(skip, skip + limit)
       .map((item) => ({
         ...item,
-        harga_satuan: Number(item.harga_satuan),
+        harga_satuan_beli: Number(item.harga_satuan_beli),
+        harga_satuan_jual: Number(item.harga_satuan_jual),
         qty_terjual: Number(item.qty_terjual),
         neto: Number(item.neto),
         untung: Number(item.untung),

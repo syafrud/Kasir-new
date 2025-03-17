@@ -22,11 +22,11 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
-import { LogoutButton } from "../../auth";
 import { Providers } from "../../providers";
 import { Toaster } from "react-hot-toast";
 import { Accordion } from "@/components/ui/accordion";
 import SidebarALink from "@/components/ui/link/accordion";
+import { signOut } from "next-auth/react";
 
 export default function DashboardLayout({
   children,
@@ -65,13 +65,13 @@ export default function DashboardLayout({
 
         <div className="flex justify-end items-center w-full px-5">
           <div className="flex items-center gap-4">
-            <a
-              href="#"
+            <button
+              onClick={() => signOut()}
               className="text-white flex items-center gap-2 hover:underline"
             >
               <LogOut size={20} />
-              <LogoutButton />
-            </a>
+              Sign Out
+            </button>
           </div>
         </div>
       </div>

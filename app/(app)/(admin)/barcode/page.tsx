@@ -266,17 +266,17 @@ const CetakBarcode: React.FC = () => {
         font-family: Arial, sans-serif;
       }
       .page {
-        width: 100%; /* Menggunakan 100% agar responsif */
-        height: 100%; /* Menggunakan 100% agar responsif */
+        width: 100%; 
+        height: 100%; 
         box-sizing: border-box;
-        padding: 10px; /* Kurangi padding untuk mencegah overflow */
+        padding: 10px; 
       }
       .product-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(${
-          127 + (settings.barcodeWidth - 1) * 107
+          127 + (settings.barcodeWidth - 1) * 128
         }px, 1fr));
-        gap:5px;
+        gap:20px;
       }
       .product-container {
         display: flex;
@@ -284,11 +284,11 @@ const CetakBarcode: React.FC = () => {
         align-items: center;
         justify-content: center;
         margin: 5px;
-        width: ${127 + (settings.barcodeWidth - 1) * 107}px; 
+        width: 100%;
         break-inside: avoid; 
         border: 1px solid #000;
-        padding:5zpx; 
         border-radius: 0px; 
+        padding: 5px; 
       }
       .product-name {
         font-weight: bold;

@@ -105,7 +105,7 @@ const SalesReportPDF = ({
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        <Text style={styles.title}>PT Indokasir Demo</Text>
+        <Text style={styles.title}>PT KasirPintar</Text>
         <Text style={styles.header}>
           Laporan Penjualan {"\n"}
           Periode: {startDateStr} s.d. {endDateStr}

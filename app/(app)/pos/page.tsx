@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   X,
   Search,
@@ -147,43 +147,58 @@ export default function SalesPage() {
     return selectedCustomer ? calculateSubTotal() * 0.1 : 0;
   };
 
-  const calculateTotal = () => {
+  const calculateTotal = useCallback(() => {
     const subTotal = calculateSubTotal();
     const discount = calculateDiscount();
     const adjustment = paymentDetails.adjustment || 0;
     return subTotal - discount + adjustment;
-  };
+  }, [selectedProducts, selectedCustomer, paymentDetails.adjustment]);
 
   const handleCashPayment = (value: number) => {
-    const total = calculateTotal();
     setPaymentDetails((prev) => ({
       ...prev,
       cash: value || 0,
-      change: (value || 0) - total,
+      change: (value || 0) - calculateTotal(),
     }));
   };
 
   const addProductToSale = (product: Produk) => {
     const existingProduct = selectedProducts.find((p) => p.id === product.id);
+    const currentStock = product.stok;
+
     if (existingProduct) {
-      setSelectedProducts(
-        selectedProducts.map((p) =>
-          p.id === product.id ? { ...p, quantity: p.quantity + 1 } : p
-        )
-      );
+      // Check if we can add one more
+      if (existingProduct.quantity < currentStock) {
+        setSelectedProducts(
+          selectedProducts.map((p) =>
+            p.id === product.id ? { ...p, quantity: p.quantity + 1 } : p
+          )
+        );
+      } else {
+        toast.error(`Stok produk ${product.nama_produk} tidak mencukupi`);
+      }
     } else {
-      setSelectedProducts([
-        ...selectedProducts,
-        {
-          ...product,
-          quantity: 1,
-        },
-      ]);
+      // For new products, always allow at least 1 if stock > 0
+      if (currentStock > 0) {
+        setSelectedProducts([
+          ...selectedProducts,
+          {
+            ...product,
+            quantity: 1,
+          },
+        ]);
+      } else {
+        toast.error(`Stok produk ${product.nama_produk} habis`);
+      }
     }
   };
 
   const removeProduct = (productId: number) => {
-    setSelectedProducts(selectedProducts.filter((p) => p.id !== productId));
+    const updatedProducts = selectedProducts.filter((p) => p.id !== productId);
+    setSelectedProducts(updatedProducts);
+    if (updatedProducts.length === 0) {
+      setPaymentDetails({ cash: 0, adjustment: 0, change: 0 });
+    }
   };
 
   const clearAllProducts = () => {
@@ -195,7 +210,15 @@ export default function SalesPage() {
 
   const handlePaymentConfirmation = async () => {
     if (!session?.user?.id) {
-      toast("Silakan login terlebih dahulu");
+      toast.error("Silakan login terlebih dahulu");
+      return;
+    }
+
+    if (!validateStock()) {
+      return;
+    }
+
+    if (!validatePayment()) {
       return;
     }
 
@@ -288,6 +311,14 @@ export default function SalesPage() {
   };
 
   const openPaymentModal = () => {
+    if (!validateStock()) {
+      return;
+    }
+
+    if (!validatePayment()) {
+      return;
+    }
+
     setIsPaymentModalOpen(true);
   };
 
@@ -308,21 +339,32 @@ export default function SalesPage() {
     const product = products.find((p) => p.id === productId);
     const maxQuantity = product ? product.stok : 0;
 
-    if (newQuantity >= 0 && newQuantity <= maxQuantity) {
-      setSelectedProducts((currentProducts) =>
-        currentProducts
-          .map((p) =>
-            p.id === productId ? { ...p, quantity: newQuantity } : p
-          )
-          .filter((p) => p.quantity > 0)
-      );
+    if (newQuantity < 0) {
+      return; // Don't allow negative quantities
     }
+
+    if (newQuantity > maxQuantity) {
+      toast.error(`Stok produk ${product?.nama_produk} tidak mencukupi`);
+      return; // Don't update if exceeding stock
+    }
+
+    setSelectedProducts((currentProducts) =>
+      currentProducts
+        .map((p) => (p.id === productId ? { ...p, quantity: newQuantity } : p))
+        .filter((p) => p.quantity > 0)
+    );
   };
 
   const incrementQuantity = (productId: number) => {
     const product = selectedProducts.find((p) => p.id === productId);
-    if (product) {
-      updateProductQuantity(productId, product.quantity + 1);
+    const inventoryProduct = products.find((p) => p.id === productId);
+
+    if (product && inventoryProduct) {
+      if (product.quantity < inventoryProduct.stok) {
+        updateProductQuantity(productId, product.quantity + 1);
+      } else {
+        toast.error(`Stok produk ${product.nama_produk} tidak mencukupi`);
+      }
     }
   };
 
@@ -426,6 +468,52 @@ export default function SalesPage() {
         console.error("Error mencari produk:", error);
       }
     }
+  };
+
+  useEffect(() => {
+    const total = calculateTotal();
+    setPaymentDetails((prev) => ({
+      ...prev,
+      change: (prev.cash || 0) - total,
+    }));
+  }, [
+    selectedProducts,
+    selectedCustomer,
+    paymentDetails.adjustment,
+    paymentDetails.cash,
+  ]);
+
+  const validateStock = () => {
+    const insufficientStockItems = selectedProducts.filter(
+      (selectedProduct) => {
+        const productInInventory = products.find(
+          (p) => p.id === selectedProduct.id
+        );
+        return (
+          productInInventory &&
+          selectedProduct.quantity > productInInventory.stok
+        );
+      }
+    );
+
+    if (insufficientStockItems.length > 0) {
+      const productNames = insufficientStockItems.map(
+        (item) => item.nama_produk
+      );
+      const errorMessage = `Stok produk ${productNames.join()} tidak mencukupi`;
+      toast.error(errorMessage);
+      return false;
+    }
+
+    return true;
+  };
+
+  const validatePayment = () => {
+    if (paymentDetails.cash < calculateTotal()) {
+      toast.error("Pembayaran kurang dari total belanja");
+      return false;
+    }
+    return true;
   };
 
   return (
@@ -696,7 +784,11 @@ export default function SalesPage() {
                     <Trash2 />
                   </button>
                   <button
-                    className="flex items-center w-9/12 bg-[#2780e3] hover:bg-[#216dc1] text-white justify-center"
+                    className={`flex items-center w-9/12 ${
+                      paymentDetails.cash < calculateTotal()
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-[#2780e3] hover:bg-[#216dc1]"
+                    } text-white justify-center`}
                     disabled={
                       selectedProducts.length === 0 ||
                       paymentDetails.cash < calculateTotal()
@@ -768,6 +860,11 @@ export default function SalesPage() {
                   <button
                     onClick={handlePaymentConfirmation}
                     disabled={paymentDetails.cash < calculateTotal()}
+                    className={`${
+                      paymentDetails.cash < calculateTotal()
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-blue-600 hover:bg-blue-700"
+                    } text-white px-4 py-2 rounded`}
                   >
                     Konfirmasi Pembayaran
                   </button>

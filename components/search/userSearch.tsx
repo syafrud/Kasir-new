@@ -22,7 +22,6 @@ const UserSearch: React.FC<UserSearchProps> = ({ onSelect, selectedId }) => {
   const searchRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Fetch selected user if selectedId is provided
     if (selectedId) {
       const fetchUser = async () => {
         try {
