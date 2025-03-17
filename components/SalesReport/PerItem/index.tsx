@@ -24,7 +24,8 @@ import toast from "react-hot-toast";
 
 interface SalesData {
   nama_barang: string;
-  harga_satuan: number;
+  harga_satuan_beli: number;
+  harga_satuan_jual: number;
   qty_terjual: number;
   neto: number;
   untung: number;

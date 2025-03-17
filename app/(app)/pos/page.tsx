@@ -26,6 +26,7 @@ declare module "next-auth" {
       name?: string | null;
       email?: string | null;
       image?: string | null;
+      role?: string;
     };
   }
 }
@@ -167,7 +168,6 @@ export default function SalesPage() {
     const currentStock = product.stok;
 
     if (existingProduct) {
-      // Check if we can add one more
       if (existingProduct.quantity < currentStock) {
         setSelectedProducts(
           selectedProducts.map((p) =>
@@ -178,7 +178,6 @@ export default function SalesPage() {
         toast.error(`Stok produk ${product.nama_produk} tidak mencukupi`);
       }
     } else {
-      // For new products, always allow at least 1 if stock > 0
       if (currentStock > 0) {
         setSelectedProducts([
           ...selectedProducts,
@@ -340,12 +339,12 @@ export default function SalesPage() {
     const maxQuantity = product ? product.stok : 0;
 
     if (newQuantity < 0) {
-      return; // Don't allow negative quantities
+      return;
     }
 
     if (newQuantity > maxQuantity) {
       toast.error(`Stok produk ${product?.nama_produk} tidak mencukupi`);
-      return; // Don't update if exceeding stock
+      return;
     }
 
     setSelectedProducts((currentProducts) =>

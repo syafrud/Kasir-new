@@ -26,7 +26,6 @@ const PelangganSearch: React.FC<PelangganSearchProps> = ({
   const searchRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Fetch selected pelanggan if selectedId is provided
     if (selectedId) {
       const fetchPelanggan = async () => {
         try {

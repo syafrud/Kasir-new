@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "10");
     const skip = (page - 1) * limit;
 
+    // Modified query to search in both product name and category name
     const [produk, totalCount] = await Promise.all([
       prisma.produk.findMany({
         where: {
