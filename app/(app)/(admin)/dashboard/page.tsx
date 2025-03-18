@@ -630,7 +630,7 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div className="grid grid-cols-3 xl:grid-cols-3 gap-6 mb-6">
           {/* Kategori Terlaris */}
           <div className="bg-white rounded-lg shadow-md p-4  border-t-4 border-[#007bff] border-2">
             <div className="flex justify-between items-center mb-4">
@@ -746,7 +746,7 @@ export default function Dashboard() {
           </div>
 
           {/* Item Terbaru */}
-          <div className="bg-white rounded-lg shadow-md p-4  border-t-4 border-[#007bff] border-2">
+          <div className="bg-white rounded-lg shadow-md p-4 xl:col-span-1 border-t-4 border-[#007bff] border-2">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-semibold">Item Terbaru</h2>
             </div>

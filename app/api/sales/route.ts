@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { format } from "date-fns";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../auth/auth.config";
 
 const prisma = new PrismaClient();
 
@@ -17,6 +19,10 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get("limit") || "10", 10);
     const skip = (page - 1) * limit;
 
+    const session = await getServerSession(authOptions);
+    const isAdmin = session?.user?.role === "ADMIN";
+    const userId = Number(session?.user?.id);
+
     const where: any = {
       isDeleted: false,
       tanggal_penjualan: {
@@ -24,6 +30,10 @@ export async function GET(request: Request) {
         lte: new Date(`${endDate}T23:59:59`),
       },
     };
+
+    if (!isAdmin && userId) {
+      where.id_user = userId;
+    }
 
     if (customer && customer !== "Semua") {
       where.pelanggan = {
@@ -33,9 +43,7 @@ export async function GET(request: Request) {
       };
     }
 
-    const totalItems = await prisma.penjualan.count({
-      where,
-    });
+    const totalItems = await prisma.penjualan.count({ where });
 
     const allSales = await prisma.penjualan.findMany({
       where,
@@ -97,15 +105,9 @@ export async function GET(request: Request) {
     });
 
     const customers = await prisma.pelanggan.findMany({
-      where: {
-        isDeleted: false,
-      },
-      select: {
-        nama: true,
-      },
-      orderBy: {
-        nama: "asc",
-      },
+      where: { isDeleted: false },
+      select: { nama: true },
+      orderBy: { nama: "asc" },
     });
 
     const formattedSales = paginatedSales.map((sale) => {
