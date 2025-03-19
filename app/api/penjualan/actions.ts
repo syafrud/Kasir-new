@@ -93,15 +93,21 @@ export async function createPenjualan(formdata: FormData) {
         where: { id: item.id },
       });
 
+      const itemDiscount = Number(item.discount || item.diskon || 0);
+
+      const itemQuantity = Number(item.quantity);
+      const itemPrice = produk!.harga_jual.toNumber();
+      const itemTotalPrice = (itemPrice - itemDiscount) * itemQuantity;
+
       await prisma.detail_penjualan.create({
         data: {
           id_penjualan: penjualan.id,
           id_produk: item.id,
+          diskon: itemDiscount,
+          harga_beli: produk!.harga_beli,
           harga_jual: produk!.harga_jual,
-          qty: item.quantity,
-          total_harga: new Prisma.Decimal(
-            produk!.harga_jual.toNumber() * item.quantity
-          ),
+          qty: itemQuantity,
+          total_harga: new Prisma.Decimal(itemTotalPrice),
           tanggal_penjualan: new Date(tanggal_penjualan),
           isDeleted: false,
         },
@@ -110,7 +116,7 @@ export async function createPenjualan(formdata: FormData) {
       await prisma.produk.update({
         where: { id: item.id },
         data: {
-          stok: produk!.stok - item.quantity,
+          stok: produk!.stok - itemQuantity,
         },
       });
 
@@ -118,7 +124,7 @@ export async function createPenjualan(formdata: FormData) {
         data: {
           id_produk: item.id,
           stockIN: 0,
-          stockOut: item.quantity,
+          stockOut: itemQuantity,
           isDeleted: false,
         },
       });
@@ -153,7 +159,39 @@ export async function updatePenjualan(formdata: FormData, id: number) {
       where: { id_penjualan: id, isDeleted: false },
     });
 
+    const updateTimestamp = new Date();
+
     for (const oldItem of oldDetails) {
+      const stockManagementEntries = await prisma.stok_management.findMany({
+        where: {
+          id_produk: oldItem.id_produk,
+          isDeleted: false,
+          created_at: {
+            gte: new Date(
+              existingPenjualan.tanggal_penjualan.getTime() - 60000
+            ),
+            lte: new Date(
+              existingPenjualan.tanggal_penjualan.getTime() + 60000
+            ),
+          },
+          stockOut: { gt: 0 },
+        },
+        orderBy: {
+          created_at: "desc",
+        },
+        take: 1,
+      });
+
+      if (stockManagementEntries.length > 0) {
+        await prisma.stok_management.update({
+          where: { id: stockManagementEntries[0].id },
+          data: {
+            isDeleted: true,
+            deletedAt: updateTimestamp,
+          },
+        });
+      }
+
       await prisma.produk.update({
         where: { id: oldItem.id_produk },
         data: {
@@ -161,12 +199,11 @@ export async function updatePenjualan(formdata: FormData, id: number) {
         },
       });
     }
-
     await prisma.detail_penjualan.updateMany({
       where: { id_penjualan: id, isDeleted: false },
       data: {
         isDeleted: true,
-        deletedAt: new Date(),
+        deletedAt: updateTimestamp,
       },
     });
 
@@ -204,21 +241,27 @@ export async function updatePenjualan(formdata: FormData, id: number) {
       },
     });
 
+    const tanggalPenjualan = new Date(tanggal_penjualan);
+
     for (const item of selectedProduk) {
       const produk = await prisma.produk.findUnique({
         where: { id: item.id },
       });
 
+      if (!produk) continue;
+
       await prisma.detail_penjualan.create({
         data: {
           id_penjualan: id,
           id_produk: item.id,
-          harga_jual: produk!.harga_jual,
+          diskon: item.diskon,
+          harga_beli: produk.harga_beli,
+          harga_jual: produk.harga_jual,
           qty: item.quantity,
           total_harga: new Prisma.Decimal(
-            produk!.harga_jual.toNumber() * item.quantity
+            (produk.harga_jual.toNumber() - item.diskon) * item.quantity
           ),
-          tanggal_penjualan: new Date(tanggal_penjualan),
+          tanggal_penjualan: tanggalPenjualan,
           isDeleted: false,
         },
       });
@@ -226,7 +269,7 @@ export async function updatePenjualan(formdata: FormData, id: number) {
       await prisma.produk.update({
         where: { id: item.id },
         data: {
-          stok: produk!.stok - item.quantity,
+          stok: produk.stok - item.quantity,
         },
       });
 
@@ -235,6 +278,7 @@ export async function updatePenjualan(formdata: FormData, id: number) {
           id_produk: item.id,
           stockIN: 0,
           stockOut: item.quantity,
+          created_at: tanggalPenjualan,
           isDeleted: false,
         },
       });

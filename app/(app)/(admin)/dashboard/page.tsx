@@ -98,19 +98,29 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    loadCategoryChartData(categoryYear);
-  }, [categoryYear]);
-
+    if (categoryYear && availableYears.length > 0) {
+      loadCategoryChartData(categoryYear);
+    }
+  }, [categoryYear, availableYears]);
   useEffect(() => {
-    loadAvailableYears();
-    loadStatsData(statsYear);
-    loadTopProductsData(topProductsYear);
-    loadCategoryChartData(categoryYear);
-    loadCategoryTableData(categoryTableYear);
-    loadTopCustomersData(customerYear);
-    loadRecentSalesData(salesYear);
-    loadNewestItemsData();
+    async function initialize() {
+      await loadAvailableYears();
+      if (availableYears.length > 0) {
+        const currentYear = availableYears[0];
+        await Promise.all([
+          loadStatsData(currentYear),
+          loadTopProductsData(currentYear),
+          loadCategoryChartData(currentYear),
+          loadCategoryTableData(currentYear),
+          loadTopCustomersData(currentYear),
+          loadRecentSalesData(currentYear),
+          loadNewestItemsData(),
+        ]);
+      }
+    }
+    initialize();
   }, []);
+
   const colorMapping = [
     "bg-red-500",
     "bg-blue-300",
@@ -136,105 +146,104 @@ export default function Dashboard() {
     }
   };
   const updateTopProductsChart = (products: TopProductData[]) => {
-    if (!topProductsChartRef.current) return;
+    if (!topProductsChartRef.current || products.length === 0) return;
 
     const ctx = topProductsChartRef.current.getContext("2d");
-    if (!ctx || products.length === 0) return;
+    if (!ctx) return;
 
     if (topProductsChartInstance.current) {
       topProductsChartInstance.current.destroy();
     }
-    if (ctx && products.length > 0) {
-      const chartData = {
-        labels: products.slice(0, 5).map((product) => product.nama_produk),
-        datasets: [
-          {
-            data: products.slice(0, 5).map((product) => product.kontribusi),
-            backgroundColor: [
-              "#ef4444",
-              "#93c5fd",
-              "#22c55e",
-              "#eab308",
-              "#8b5cf6",
-            ],
-            borderWidth: 0,
-          },
-        ],
-      };
 
-      topProductsChartInstance.current = new Chart(ctx, {
-        type: "pie",
-        data: chartData,
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              display: false,
-            },
-            tooltip: {
-              callbacks: {
-                label: (context) => {
-                  return `${context.label}: ${context.raw}%`;
-                },
+    const chartData = {
+      labels: products.slice(0, 5).map((product) => product.nama_produk),
+      datasets: [
+        {
+          data: products.slice(0, 5).map((product) => product.kontribusi),
+          backgroundColor: [
+            "#ef4444",
+            "#93c5fd",
+            "#22c55e",
+            "#eab308",
+            "#8b5cf6",
+          ],
+          borderWidth: 0,
+        },
+      ],
+    };
+
+    topProductsChartInstance.current = new Chart(ctx, {
+      type: "pie",
+      data: chartData,
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false,
+          },
+          tooltip: {
+            callbacks: {
+              label: (context) => {
+                return `${context.label}: ${context.raw}%`;
               },
             },
           },
         },
-      });
-    }
+      },
+    });
   };
+
   const updateCategoryChart = (categories: CategoryData[]) => {
-    if (!categoryChartRef.current) return;
+    if (!categoryChartRef.current || categories.length === 0) return;
 
     const ctx = categoryChartRef.current.getContext("2d");
-    if (!ctx || categories.length === 0) return;
+    if (!ctx) return;
 
     if (categoryChartInstance.current) {
       categoryChartInstance.current.destroy();
     }
-    if (ctx && categories.length > 0) {
-      const chartData = {
-        labels: categories.slice(0, 5).map((category) => category.name),
-        datasets: [
-          {
-            data: categories.slice(0, 5).map((category) => category.value),
-            backgroundColor: [
-              "#ef4444",
-              "#93c5fd",
-              "#22c55e",
-              "#eab308",
-              "#8b5cf6",
-            ],
-            borderWidth: 0,
-          },
-        ],
-      };
 
-      categoryChartInstance.current = new Chart(ctx, {
-        type: "doughnut",
-        data: chartData,
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          cutout: "50%",
-          plugins: {
-            legend: {
-              display: false,
-            },
-            tooltip: {
-              callbacks: {
-                label: (context) => {
-                  return `${context.label}: ${formatCurrency(
-                    context.raw as number
-                  )}`;
-                },
+    const chartData = {
+      labels: categories.slice(0, 5).map((category) => category.name),
+      datasets: [
+        {
+          data: categories.slice(0, 5).map((category) => category.value),
+          backgroundColor: [
+            "#ef4444",
+            "#93c5fd",
+            "#22c55e",
+            "#eab308",
+            "#8b5cf6",
+          ],
+          borderWidth: 0,
+        },
+      ],
+    };
+
+    categoryChartInstance.current = new Chart(ctx, {
+      type: "doughnut",
+      data: chartData,
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: "50%",
+        plugins: {
+          legend: {
+            display: false,
+          },
+          tooltip: {
+            callbacks: {
+              label: (context) => {
+                return `${context.label}: ${formatCurrency(
+                  context.raw as number
+                )}`;
               },
             },
           },
         },
-      });
-    }
+      },
+    });
   };
   const loadTopProductsData = async (year: number) => {
     setLoadingTopProducts(true);
@@ -310,40 +319,34 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    loadStatsData(statsYear);
-  }, [statsYear]);
+    if (statsYear && availableYears.length > 0) loadStatsData(statsYear);
+  }, [statsYear, availableYears]);
 
   useEffect(() => {
-    loadTopProductsData(topProductsYear);
-  }, [topProductsYear]);
+    if (topProductsYear && availableYears.length > 0)
+      loadTopProductsData(topProductsYear);
+  }, [topProductsYear, availableYears]);
 
   useEffect(() => {
-    loadCategoryData(categoryYear);
-  }, [categoryYear]);
+    if (categoryYear && availableYears.length > 0)
+      loadCategoryData(categoryYear);
+  }, [categoryYear, availableYears]);
 
   useEffect(() => {
-    loadCategoryTableData(categoryTableYear);
-  }, [categoryTableYear]);
+    if (categoryTableYear && availableYears.length > 0)
+      loadCategoryTableData(categoryTableYear);
+  }, [categoryTableYear, availableYears]);
 
   useEffect(() => {
-    loadTopCustomersData(customerYear);
-  }, [customerYear]);
+    if (customerYear && availableYears.length > 0)
+      loadTopCustomersData(customerYear);
+  }, [customerYear, availableYears]);
 
   useEffect(() => {
-    loadRecentSalesData(salesYear);
-  }, [salesYear]);
+    if (salesYear && availableYears.length > 0) loadRecentSalesData(salesYear);
+  }, [salesYear, availableYears]);
 
   useEffect(() => {
-    loadNewestItemsData();
-  }, []);
-
-  useEffect(() => {
-    loadStatsData(statsYear);
-    loadTopProductsData(topProductsYear);
-    loadCategoryData(categoryYear);
-    loadCategoryTableData(categoryTableYear);
-    loadTopCustomersData(customerYear);
-    loadRecentSalesData(salesYear);
     loadNewestItemsData();
   }, []);
 

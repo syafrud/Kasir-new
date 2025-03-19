@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { format } from "date-fns";
+import { log } from "console";
 
 const prisma = new PrismaClient();
 
@@ -28,7 +29,12 @@ export async function GET(request: Request) {
     const salesData = await prisma.detail_penjualan.findMany({
       where: whereClause,
       include: {
-        produk: true,
+        produk: {
+          select: {
+            id: true,
+            nama_produk: true,
+          },
+        },
         penjualan: {
           include: {
             pelanggan: true,
@@ -43,14 +49,22 @@ export async function GET(request: Request) {
             (sale) => sale.penjualan.id_pelanggan?.toString() === customerId
           )
         : salesData;
+    console.log(filteredSales);
 
     const groupedSales = filteredSales.reduce((acc, item) => {
-      const { id, nama_produk, harga_jual, harga_beli } = item.produk;
+      console.log(item.total_harga);
+
+      const { id, nama_produk } = item.produk;
+      const harga_jual = item.harga_jual;
+      const harga_beli = item.harga_beli;
+      const diskon = item.diskon;
+
       if (!acc[id]) {
         acc[id] = {
           nama_barang: nama_produk,
           harga_satuan_beli: Number(harga_beli),
           harga_satuan_jual: Number(harga_jual),
+          diskon: Number(diskon),
           qty_terjual: 0,
           neto: 0,
           untung: 0,
@@ -59,8 +73,10 @@ export async function GET(request: Request) {
       }
       acc[id].qty_terjual += Number(item.qty);
       acc[id].neto += Number(item.total_harga);
+      log(Number(item.total_harga));
       acc[id].untung +=
-        Number(item.qty) * (Number(item.harga_jual) - Number(harga_beli ?? 0));
+        Number(item.qty) *
+        (Number(harga_jual) - Number(diskon) - Number(harga_beli ?? 0));
       return acc;
     }, {} as Record<string, any>);
 
@@ -72,6 +88,7 @@ export async function GET(request: Request) {
         harga_satuan_beli: Number(item.harga_satuan_beli),
         harga_satuan_jual: Number(item.harga_satuan_jual),
         qty_terjual: Number(item.qty_terjual),
+        diskon: Number(item.diskon),
         neto: Number(item.neto),
         untung: Number(item.untung),
         tgl_penjualan: format(new Date(item.tgl_penjualan), "dd-MM-yyyy"),

@@ -25,7 +25,7 @@ export async function GET(
           where: { isDeleted: false },
           include: {
             produk: {
-              select: { id: true, nama_produk: true, harga_jual: true },
+              select: { id: true, nama_produk: true },
             },
           },
         },
@@ -43,9 +43,10 @@ export async function GET(
       sale.detail_penjualan.map((item) => ({
         id: item.produk.id,
         produk_nama: item.produk.nama_produk,
+        diskon: item.diskon,
         qty: item.qty,
-        harga_jual: Number(item.produk.harga_jual),
-        subtotal: item.qty * Number(item.produk.harga_jual),
+        harga_jual: item.harga_jual,
+        subtotal: item.qty * (Number(item.harga_jual) - Number(item.diskon)),
       })) || [];
 
     const totalSubtotal = items.reduce((acc, item) => acc + item.subtotal, 0);

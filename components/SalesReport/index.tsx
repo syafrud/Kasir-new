@@ -21,6 +21,8 @@ import {
 } from "@react-pdf/renderer";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { Printer } from "lucide-react";
+import { PrintInvoice } from "../print/PrintInvoice";
 
 interface SalesData {
   id: number;
@@ -114,7 +116,7 @@ const SalesReportPDF = ({
         <View style={styles.table}>
           <View style={styles.tableRow}>
             <Text style={[styles.tableHeaderCell, { width: "5%" }]}>No</Text>
-            <Text style={[styles.tableHeaderCell, { width: "20%" }]}>
+            <Text style={[styles.tableHeaderCell, { width: "35%" }]}>
               Nama Customer
             </Text>
             <Text style={[styles.tableHeaderCell, { width: "15%" }]}>
@@ -134,7 +136,7 @@ const SalesReportPDF = ({
               <Text style={[styles.tableCell, { width: "5%" }]}>
                 {index + 1}
               </Text>
-              <Text style={[styles.tableCell, { width: "20%" }]}>
+              <Text style={[styles.tableCell, { width: "35%" }]}>
                 {item.nama_customer || "-"}
               </Text>
               <Text style={[styles.tableCell, { width: "15%" }]}>
@@ -295,8 +297,6 @@ const SalesReport = () => {
       { wch: 15 },
       { wch: 15 },
       { wch: 15 },
-      { wch: 15 },
-      { wch: 10 },
     ];
     worksheet["!cols"] = wscols;
 
@@ -487,6 +487,7 @@ const SalesReport = () => {
               <th className="py-2 px-4 border">Tgl. Transaksi</th>
               <th className="py-2 px-4 border">Neto</th>
               <th className="py-2 px-4 border">Untung/Rugi</th>
+              <th className="p-2 border">Print</th>
             </tr>
           </thead>
           <tbody>
@@ -518,6 +519,20 @@ const SalesReport = () => {
                   <td className="py-2 px-4 border">{item.tgl_invoice}</td>
                   <td className="py-2 px-4 border text-right">{item.neto}</td>
                   <td className="py-2 px-4 border text-right">{item.untung}</td>
+                  <td className="flex p-2 border text-center justify-center">
+                    <button
+                      onClick={() => PrintInvoice(item.id)}
+                      className="flex justify-center items-center max-w-9 max-h-9 bg-[#ffc107] text-black px-2 py-2 rounded text-sm hover:bg-[#ffca2c] transition-colors"
+                    >
+                      <Printer className="" />
+                    </button>
+                    <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1 hidden group-hover:block">
+                      <div className="bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+                        Print Invoice
+                      </div>
+                      <div className="w-2 h-2 bg-gray-800 transform rotate-45 mx-auto -mt-1"></div>
+                    </div>
+                  </td>
                 </tr>
               ))
             )}

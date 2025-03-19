@@ -27,6 +27,9 @@ export async function GET(request: NextRequest) {
           },
         },
         detail_penjualan: {
+          where: {
+            isDeleted: false,
+          },
           include: {
             produk: {
               select: {

@@ -14,6 +14,7 @@ interface InvoiceItem {
   produk_nama: string;
   qty: number;
   harga_jual: number;
+  diskon: number;
   subtotal: number;
 }
 
@@ -146,20 +147,14 @@ export default function SalesPage() {
 
   const handleEditClick = () => {
     if (selectedInvoice) {
-      const dateParts = selectedInvoice.tgl_invoice.split("-");
-      const formattedDate =
-        dateParts.length === 3
-          ? `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`
-          : selectedInvoice.tgl_invoice;
-
       setEditedInvoice({
         ...selectedInvoice,
-        tanggal_penjualan: formattedDate,
+        // Keep the original date string without reformatting
+        tanggal_penjualan: selectedInvoice.tgl_invoice,
       });
       setEditedItems([...(selectedInvoice.items || [])]);
       fetchProducts();
       setIsEditMode(true);
-      console.log("Formatted date:", formattedDate);
     }
   };
 
@@ -195,10 +190,19 @@ export default function SalesPage() {
     const updatedItems = editedItems.map((item) => {
       if (item.id === itemId) {
         const updatedItem = { ...item, [field]: value };
-        if (field === "qty" || field === "harga_jual") {
-          updatedItem.subtotal =
-            Number(updatedItem.qty) * Number(updatedItem.harga_jual);
+
+        // Initialize diskon property if it doesn't exist
+        if (!updatedItem.diskon && updatedItem.diskon !== 0) {
+          updatedItem.diskon = 0;
         }
+
+        if (field === "qty" || field === "harga_jual" || field === "diskon") {
+          // Calculate new subtotal considering discount
+          const priceAfterDiscount =
+            Number(updatedItem.harga_jual) - Number(updatedItem.diskon || 0);
+          updatedItem.subtotal = Number(updatedItem.qty) * priceAfterDiscount;
+        }
+
         return updatedItem;
       }
       return item;
@@ -279,7 +283,8 @@ export default function SalesPage() {
           return {
             ...item,
             qty: newQty,
-            subtotal: newQty * Number(item.harga_jual),
+            subtotal:
+              newQty * (Number(item.harga_jual) - Number(item.diskon || 0)),
           };
         }
         return item;
@@ -290,6 +295,7 @@ export default function SalesPage() {
         produk_nama: product.nama,
         qty: 1,
         harga_jual: Number(product.harga_jual),
+        diskon: 0, // Initialize discount to 0
         subtotal: Number(product.harga_jual),
       };
       newEditedItems = [...editedItems, newItem];
@@ -407,9 +413,9 @@ export default function SalesPage() {
 
       const formData = new FormData();
       formData.append("diskon", String(discount || 0));
-      formData.append("total_harga", String(subTotal || 0));
+      formData.append("total_harga", String(neto || 0));
       formData.append("penyesuaian", String(editedInvoice?.penyesuaian || 0));
-      formData.append("total_bayar", String(neto || 0));
+      formData.append("total_bayar", String(editedInvoice?.bayar || 0));
       formData.append("kembalian", String(editedInvoice?.kembalian || 0));
 
       const userId = session?.user?.id;
@@ -423,15 +429,14 @@ export default function SalesPage() {
       }
 
       const dateValue = editedInvoice.tanggal_penjualan
-        ? typeof editedInvoice.tanggal_penjualan === "string"
-          ? editedInvoice.tanggal_penjualan
-          : new Date(editedInvoice.tanggal_penjualan as any).toISOString()
+        ? editedInvoice.tanggal_penjualan.toString()
         : new Date().toISOString();
       formData.append("tanggal_penjualan", dateValue);
 
       const selectedProduk = editedItems.map((item) => ({
         id: item.id,
         quantity: item.qty,
+        diskon: item.diskon || 0,
       }));
       formData.append("selectedProduk", JSON.stringify(selectedProduk));
 
@@ -630,6 +635,46 @@ export default function SalesPage() {
     }
 
     return format(date, "yyyy-MM-dd");
+  };
+
+  // Add this utility function for formatting dates with time
+  const formatDateWithTime = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      if (!isNaN(date.getTime())) {
+        return `${date.getDate().toString().padStart(2, "0")}-${(
+          date.getMonth() + 1
+        )
+          .toString()
+          .padStart(2, "0")}-${date.getFullYear()} ${date
+          .getHours()
+          .toString()
+          .padStart(2, "0")}.${date.getMinutes().toString().padStart(2, "0")}`;
+      }
+      return dateString;
+    } catch (error) {
+      return dateString;
+    }
+  };
+
+  // Add this utility function for formatting dates with time in edit mode (DD/MM/YYYY HH.MM)
+  const formatDateForEdit = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      if (!isNaN(date.getTime())) {
+        return `${date.getDate().toString().padStart(2, "0")}/${(
+          date.getMonth() + 1
+        )
+          .toString()
+          .padStart(2, "0")}/${date.getFullYear()} ${date
+          .getHours()
+          .toString()
+          .padStart(2, "0")}.${date.getMinutes().toString().padStart(2, "0")}`;
+      }
+      return dateString;
+    } catch (error) {
+      return dateString;
+    }
   };
 
   return (
@@ -953,14 +998,12 @@ export default function SalesPage() {
                   </div>
                   <div>
                     <input
-                      type="date"
-                      className="border p-1 w-full"
-                      value={formatDateForInput(
-                        editedInvoice?.tanggal_penjualan
+                      type="text"
+                      className="border p-1 w-full bg-gray-100"
+                      value={formatDateForEdit(
+                        editedInvoice?.tanggal_penjualan?.toString() || ""
                       )}
-                      onChange={(e) =>
-                        handleInvoiceChange("tanggal_penjualan", e.target.value)
-                      }
+                      disabled
                     />
                   </div>
                 </div>
@@ -1021,6 +1064,32 @@ export default function SalesPage() {
                           <div className="flex flex-col">
                             <p className="text-gray-600">{item.produk_nama}</p>
                             <p className="text-gray-600">{item.harga_jual}</p>
+                            <div className="flex items-center space-x-2 mt-1">
+                              <label className="text-sm">Diskon:</label>
+                              <span className="text-sm">Rp.</span>
+                              <input
+                                type="number"
+                                className="border p-1 w-16"
+                                value={item.diskon || 0}
+                                min="0"
+                                max={item.harga_jual}
+                                onChange={(e) =>
+                                  handleItemChange(
+                                    item.id,
+                                    "diskon",
+                                    Number(e.target.value)
+                                  )
+                                }
+                              />
+                            </div>
+                            {item.diskon > 0 && (
+                              <p className="text-sm text-green-600">
+                                Hemat: Rp.{" "}
+                                {(
+                                  (item.diskon || 0) * item.qty
+                                ).toLocaleString()}
+                              </p>
+                            )}
                           </div>
 
                           <div className="flex items-center gap-2">
@@ -1163,38 +1232,58 @@ export default function SalesPage() {
                     <p className="text-gray-600">Tanggal</p>
                   </div>
                   <div>
-                    <p>{formatDate(selectedInvoice.tgl_invoice)}</p>
+                    <p>{formatDateWithTime(selectedInvoice.tgl_invoice)}</p>
                   </div>
                 </div>
 
                 {/* Item details with overflow handling */}
                 <div className="mb-4 max-h-64 overflow-y-auto">
-                  {invoiceItems.length > 0 ? (
-                    invoiceItems.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex justify-between items-center border-b pb-1 mb-1"
-                      >
-                        <div className="flex flex-col">
-                          <p className="text-gray-600">{item.produk_nama}</p>
-                          <p className="font-medium w-28">
-                            {formatCurrency(item.harga_jual)}
-                          </p>
-                        </div>
+                  {/* Item details with overflow handling */}
+                  <div className="mb-4 max-h-64 overflow-y-auto">
+                    {invoiceItems.length > 0 ? (
+                      invoiceItems.map((item) => (
+                        <div
+                          key={item.id}
+                          className="flex justify-between items-center border-b pb-1 mb-1"
+                        >
+                          <div className="flex flex-col">
+                            <p className="text-gray-600">{item.produk_nama}</p>
+                            <p className="font-medium w-28">
+                              {formatCurrency(item.harga_jual)} x {item.qty}
+                            </p>
+                            {item.diskon > 0 && (
+                              <>
+                                <p className="text-sm text-gray-600">
+                                  Diskon: {formatCurrency(item.diskon)} x{" "}
+                                  {item.qty}
+                                </p>
+                              </>
+                            )}
+                          </div>
 
-                        <div className="flex items-center gap-2">
-                          <p className="text-gray-600">{item.qty}x</p>
-                          <p className="font-medium">
-                            {formatCurrency(item.harga_jual * item.qty)}
-                          </p>
+                          <div className="flex flex-col items-end gap-2">
+                            <p className="font-medium">
+                              {formatCurrency(
+                                (item.harga_jual - (item.diskon || 0)) *
+                                  item.qty
+                              )}
+                            </p>
+                            {item.diskon > 0 && (
+                              <>
+                                <p className=" text-gray-600">
+                                  -{formatCurrency(item.diskon * item.qty)}
+                                </p>
+                              </>
+                            )}
+                          </div>
                         </div>
+                      ))
+                    ) : (
+                      <div className="text-center text-gray-500 py-2">
+                        Tidak ada item
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-center text-gray-500 py-2">
-                      Tidak ada item
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
 
                 {/* Transaction summary */}

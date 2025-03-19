@@ -53,7 +53,7 @@ export default function SalesPage() {
   const [pageSize, setPageSize] = useState(5);
   const [products, setProducts] = useState<Produk[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<
-    (Produk & { quantity: number })[]
+    (Produk & { quantity: number; diskon: number })[]
   >([]);
   const [lastSaleId, setLastSaleId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -137,11 +137,31 @@ export default function SalesPage() {
     setFilteredCustomers(filtered);
   }, [customerSearchTerm, customers]);
 
-  const calculateSubTotal = () => {
-    return selectedProducts.reduce(
-      (total, product) => total + product.harga_jual * product.quantity,
-      0
+  const updateProductDiscount = (productId: number, discountAmount: number) => {
+    if (discountAmount < 0) {
+      toast.error("Diskon tidak boleh negatif");
+      return;
+    }
+
+    const product = selectedProducts.find((p) => p.id === productId);
+    if (product && discountAmount > product.harga_jual) {
+      toast.error("Diskon tidak boleh melebihi harga produk");
+      return;
+    }
+
+    setSelectedProducts((currentProducts) =>
+      currentProducts.map((p) =>
+        p.id === productId ? { ...p, diskon: discountAmount } : p
+      )
     );
+  };
+
+  const calculateSubTotal = () => {
+    return selectedProducts.reduce((total, product) => {
+      const productPrice = product.harga_jual * product.quantity;
+      const productDiscount = product.diskon * product.quantity;
+      return total + (productPrice - productDiscount);
+    }, 0);
   };
 
   const calculateDiscount = () => {
@@ -184,6 +204,7 @@ export default function SalesPage() {
           {
             ...product,
             quantity: 1,
+            diskon: 0,
           },
         ]);
       } else {
@@ -224,7 +245,7 @@ export default function SalesPage() {
     try {
       const formData = new FormData();
       formData.append("diskon", calculateDiscount().toString());
-      formData.append("total_harga", calculateSubTotal().toString());
+      formData.append("total_harga", calculateTotal().toString());
       formData.append("penyesuaian", paymentDetails.adjustment.toString());
       formData.append("total_bayar", paymentDetails.cash.toString());
       formData.append("kembalian", paymentDetails.change.toString());
@@ -237,6 +258,7 @@ export default function SalesPage() {
           selectedProducts.map((product) => ({
             id: product.id,
             quantity: product.quantity,
+            discount: product.diskon,
           }))
         )
       );
@@ -693,6 +715,30 @@ export default function SalesPage() {
                     <div>
                       <p className="font-semibold">{product.nama_produk}</p>
                       <p>Rp. {product.harga_jual.toLocaleString()}</p>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <label className="text-sm">Diskon:</label>
+                        <span className="text-sm">Rp.</span>
+                        <input
+                          type="number"
+                          value={product.diskon}
+                          onChange={(e) => {
+                            const newDiscount = parseFloat(e.target.value);
+                            updateProductDiscount(
+                              product.id,
+                              isNaN(newDiscount) ? 0 : newDiscount
+                            );
+                          }}
+                          className="w-24 text-center"
+                          min="0"
+                          max={product.harga_jual}
+                        />
+                      </div>
+                      {product.diskon > 0 && (
+                        <p className="text-sm text-green-600">
+                          Hemat: Rp.{" "}
+                          {(product.diskon * product.quantity).toLocaleString()}
+                        </p>
+                      )}
                     </div>
                     <div className="flex items-center space-x-2">
                       <button
@@ -711,7 +757,7 @@ export default function SalesPage() {
                             isNaN(newQuantity) ? 0 : newQuantity
                           );
                         }}
-                        className=" w-16 text-center"
+                        className="w-16 text-center"
                         min="0"
                         max={
                           products.find((p) => p.id === product.id)?.stok || 0

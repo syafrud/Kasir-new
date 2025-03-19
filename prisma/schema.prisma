@@ -22,7 +22,9 @@ model detail_penjualan {
   id                Int       @id @default(autoincrement())
   id_penjualan      Int
   id_produk         Int
+  harga_beli        Decimal
   harga_jual        Decimal
+  diskon            Decimal   @default(0)
   qty               Int
   total_harga       Decimal
   tanggal_penjualan DateTime
@@ -68,6 +70,7 @@ model produk {
   detail_penjualan detail_penjualan[]
   kategori         kategori           @relation(fields: [id_kategori], references: [id], onDelete: Cascade)
   stok_management  stok_management[]
+  event_produk     event_produk[]
 }
 
 model stok_management {
@@ -125,4 +128,34 @@ model users {
 enum UserRole {
   ADMIN
   PETUGAS
+}
+
+model event {
+  id              Int       @id @default(autoincrement())
+  nama_event      String
+  deskripsi       String?
+  tanggal_mulai   DateTime
+  tanggal_selesai DateTime
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  isDeleted       Boolean   @default(false)
+  deletedAt       DateTime?
+
+  event_produk event_produk[]
+}
+
+model event_produk {
+  id         Int       @id @default(autoincrement())
+  id_event   Int
+  id_produk  Int
+  diskon     Decimal
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  isDeleted  Boolean   @default(false)
+  deletedAt  DateTime?
+
+  event  event  @relation(fields: [id_event], references: [id], onDelete: Cascade)
+  produk produk @relation(fields: [id_produk], references: [id], onDelete: Cascade)
+
+  @@unique([id_event, id_produk])
 }

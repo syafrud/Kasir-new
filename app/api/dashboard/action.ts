@@ -373,12 +373,7 @@ export async function getRecentSales(year: number): Promise<RecentSaleData[]> {
       (sum, detail) => sum + Number(detail.qty),
       0
     );
-
-    const totalHarga = sale.detail_penjualan.reduce(
-      (sum, detail) => sum + Number(detail.total_harga),
-      0
-    );
-
+    const totalHarga = Number(sale.total_harga);
     const totalAfterDiscounts =
       totalHarga - Number(sale.diskon || 0) + Number(sale.penyesuaian || 0);
 
@@ -436,41 +431,68 @@ export async function getGrowthStats(year: number): Promise<GrowthStats> {
 export async function getAvailableYears(): Promise<number[]> {
   noStore();
 
-  const earliestTransaction = await prisma.penjualan.findFirst({
-    where: {
-      isDeleted: false,
-    },
-    orderBy: {
-      tanggal_penjualan: "asc",
-    },
-    select: {
-      tanggal_penjualan: true,
-    },
-  });
+  try {
+    const earliestTransaction = await prisma.penjualan.findFirst({
+      where: {
+        isDeleted: false,
+        tanggal_penjualan: {
+          not: null,
+        },
+      },
+      orderBy: {
+        tanggal_penjualan: "asc",
+      },
+      select: {
+        tanggal_penjualan: true,
+      },
+    });
 
-  const latestTransaction = await prisma.penjualan.findFirst({
-    where: {
-      isDeleted: false,
-    },
-    orderBy: {
-      tanggal_penjualan: "desc",
-    },
-    select: {
-      tanggal_penjualan: true,
-    },
-  });
+    const latestTransaction = await prisma.penjualan.findFirst({
+      where: {
+        isDeleted: false,
+        tanggal_penjualan: {
+          not: null,
+        },
+      },
+      orderBy: {
+        tanggal_penjualan: "desc",
+      },
+      select: {
+        tanggal_penjualan: true,
+      },
+    });
 
-  if (!earliestTransaction || !latestTransaction) {
+    if (!earliestTransaction || !latestTransaction) {
+      return [new Date().getFullYear()];
+    }
+
+    const isValidDate = (date: Date) => {
+      return (
+        date instanceof Date &&
+        !isNaN(date.getTime()) &&
+        date.getMonth() > 0 &&
+        date.getDate() > 0
+      );
+    };
+
+    if (
+      !isValidDate(earliestTransaction.tanggal_penjualan) ||
+      !isValidDate(latestTransaction.tanggal_penjualan)
+    ) {
+      return [new Date().getFullYear()];
+    }
+
+    const startYear = earliestTransaction.tanggal_penjualan.getFullYear();
+    const endYear = latestTransaction.tanggal_penjualan.getFullYear();
+
+    const years: number[] = [];
+    for (let year = endYear; year >= startYear; year--) {
+      years.push(year);
+    }
+
+    return years;
+  } catch (error) {
+    console.error("Error getting available years:", error);
     return [new Date().getFullYear()];
   }
-
-  const startYear = earliestTransaction.tanggal_penjualan.getFullYear();
-  const endYear = latestTransaction.tanggal_penjualan.getFullYear();
-
-  const years: number[] = [];
-  for (let year = endYear; year >= startYear; year--) {
-    years.push(year);
-  }
-
-  return years;
 }

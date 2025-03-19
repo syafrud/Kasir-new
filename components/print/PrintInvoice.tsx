@@ -10,6 +10,7 @@ interface DetailPenjualan {
   qty: number;
   harga_jual: string | number | Decimal;
   total_harga: string | number | Decimal;
+  diskon: string | number | Decimal;
 }
 
 interface Pelanggan {
@@ -52,6 +53,10 @@ export const PrintInvoice = async (id: number) => {
       return numValue.toLocaleString("id-ID");
     };
 
+    const totalItemDiscount = penjualan.detail_penjualan.reduce((sum, item) => {
+      return sum + Number(item.diskon) * item.qty;
+    }, 0);
+
     const subTotal = penjualan.detail_penjualan.reduce((sum, item) => {
       return sum + Number(item.total_harga);
     }, 0);
@@ -77,13 +82,15 @@ export const PrintInvoice = async (id: number) => {
                 display: none;
               }
               body {
+                width:100%,
+                height:100%,
                 print-color-adjust: exact;
                 -webkit-print-color-adjust: exact;
               }
             }
           </style>
         </head>
-        <body class="p-3">
+        <body>
           <!-- Invoice Template -->
           <div class="border border-gray-300 p-6 max-w-4xl mx-auto">
             <div class="flex justify-between items-start">
@@ -155,6 +162,8 @@ export const PrintInvoice = async (id: number) => {
                     <th class="border border-gray-300 p-2 text-left">Deskripsi</th>
                     <th class="border border-gray-300 p-2 text-center">Kuantitas</th>
                     <th class="border border-gray-300 p-2 text-center">Harga Satuan</th>
+                    <th class="border border-gray-300 p-2 text-center">Diskon</th>
+                    <th class="border border-gray-300 p-2 text-center">Total Diskon</th>
                     <th class="border border-gray-300 p-2 text-center">Total</th>
                   </tr>
                 </thead>
@@ -176,6 +185,12 @@ export const PrintInvoice = async (id: number) => {
                         detail.harga_jual
                       )}</td>
                       <td class="border border-gray-300 p-2 text-right">Rp ${formatCurrency(
+                        Number(detail.diskon)
+                      )}</td>
+                      <td class="border border-gray-300 p-2 text-right">Rp ${formatCurrency(
+                        Number(detail.diskon) * detail.qty
+                      )}</td>
+                      <td class="border border-gray-300 p-2 text-right">Rp ${formatCurrency(
                         detail.total_harga
                       )}</td>
                     </tr>
@@ -194,7 +209,13 @@ export const PrintInvoice = async (id: number) => {
                     )}</td>
                   </tr>
                   <tr>
-                    <td class="border border-gray-300 p-2 font-bold">Diskon</td>
+                    <td class="border border-gray-300 p-2 font-bold">Diskon Per Item</td>
+                    <td class="border border-gray-300 p-2 text-right">Rp ${formatCurrency(
+                      totalItemDiscount
+                    )}</td>
+                  </tr>
+                  <tr>
+                    <td class="border border-gray-300 p-2 font-bold">Diskon Tambahan</td>
                     <td class="border border-gray-300 p-2 text-right">Rp ${formatCurrency(
                       penjualan.diskon
                     )}</td>

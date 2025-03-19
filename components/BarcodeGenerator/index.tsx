@@ -1,7 +1,7 @@
 // src/components/BarcodeGenerator.tsx
 "use client";
 import React, { useState } from "react";
-import { Search } from "lucide-react";
+import { ChevronDown, FileDown, FileText, Printer, Search } from "lucide-react";
 
 interface BarcodeSettings {
   paperSize: string;
@@ -133,20 +133,7 @@ const BarcodeGenerator: React.FC = () => {
             <option value="Tidak">Tidak</option>
           </select>
           <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-            <svg
-              className="w-4 h-4 text-gray-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M19 9l-7 7-7-7"
-              ></path>
-            </svg>
+            <ChevronDown className="w-4 h-4 text-gray-500" />
           </div>
         </div>
       </div>
@@ -184,54 +171,15 @@ const BarcodeGenerator: React.FC = () => {
 
       <div className="flex gap-2 mb-6">
         <button className="flex items-center justify-center bg-green-500 hover:bg-green-600 text-white rounded-md px-6 py-2">
-          <svg
-            className="w-5 h-5 mr-2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
-            ></path>
-          </svg>
+          <Printer className="w-5 h-5 mr-2" />
           PRINT
         </button>
         <button className="flex items-center justify-center bg-red-500 hover:bg-red-600 text-white rounded-md px-6 py-2">
-          <svg
-            className="w-5 h-5 mr-2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-            ></path>
-          </svg>
+          <FileDown className="w-5 h-5 mr-2" />
           PDF
         </button>
         <button className="flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white rounded-md px-6 py-2">
-          <svg
-            className="w-5 h-5 mr-2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-            ></path>
-          </svg>
+          <FileText className="w-5 h-5 mr-2" />
           WORD
         </button>
       </div>

@@ -71,6 +71,7 @@ interface Produk {
 interface PenjualanProduct {
   id_produk: number;
   qty: number;
+  diskon: number;
   produk: {
     nama_produk: string;
     harga_jual: string;
@@ -89,7 +90,7 @@ export default function PenjualanPage() {
   const [isPelanggan, setIsPelanggan] = useState(false);
   const [produkOptions, setProdukOptions] = useState<Produk[]>([]);
   const [selectedProduk, setSelectedProduk] = useState<
-    { id: number; quantity: number }[]
+    { id: number; quantity: number; diskon: number }[]
   >([]);
   const [search, setSearch] = useState("");
   const [dateRange, setDateRange] = useState({
@@ -233,21 +234,49 @@ export default function PenjualanPage() {
     }
   }, [isPelanggan]);
 
+  const handleProductChange = (
+    id: number,
+    quantity: number,
+    diskon: number = 0
+  ) => {
+    setSelectedProduk((prev) => {
+      const existingProduct = prev.find((item) => item.id === id);
+      if (existingProduct) {
+        return prev.map((item) =>
+          item.id === id ? { ...item, quantity, diskon } : item
+        );
+      } else {
+        return [...prev, { id, quantity, diskon }];
+      }
+    });
+  };
+
   useEffect(() => {
     const totalHargaSebelumDiskon = selectedProduk.reduce((total, item) => {
       const produk = produkOptions.find((p) => p.id === item.id);
-      return total + (produk ? produk.harga_jual * item.quantity : 0);
+      const hargaProduk = produk ? produk.harga_jual * item.quantity : 0;
+      return total + hargaProduk;
     }, 0);
 
-    const diskon = isPelanggan ? Math.round(totalHargaSebelumDiskon * 0.1) : 0;
+    const totalDiskonProduk = selectedProduk.reduce((acc, item) => {
+      return acc + (item.diskon || 0) * item.quantity;
+    }, 0);
+
+    const diskonPelanggan = isPelanggan
+      ? Math.round(totalHargaSebelumDiskon * 0.1)
+      : 0;
+
+    const totalSetelahDiskon =
+      totalHargaSebelumDiskon - totalDiskonProduk - diskonPelanggan;
+
     const penyesuaian = parseCurrency(formData.penyesuaian);
 
-    const totalSetelahDiskon = totalHargaSebelumDiskon - diskon + penyesuaian;
+    const totalAkhir = totalSetelahDiskon + penyesuaian;
 
     setFormData((prev) => ({
       ...prev,
-      total_harga: Math.round(totalSetelahDiskon).toString(),
-      diskon: diskon.toString(),
+      total_harga: Math.round(totalAkhir).toString(),
+      diskon: diskonPelanggan.toString(),
     }));
   }, [selectedProduk, isPelanggan, produkOptions, formData.penyesuaian]);
 
@@ -382,6 +411,7 @@ export default function PenjualanPage() {
         products.map((product: PenjualanProduct) => ({
           id: product.id_produk,
           quantity: product.qty,
+          diskon: product.diskon,
         }))
       );
     } catch (error) {
@@ -813,7 +843,10 @@ export default function PenjualanPage() {
                             : item
                         );
                       } else {
-                        return [...prev, { id: produk.id, quantity: 1 }];
+                        return [
+                          ...prev,
+                          { id: produk.id, quantity: 1, diskon: 0 },
+                        ];
                       }
                     });
                   }}
@@ -851,39 +884,65 @@ export default function PenjualanPage() {
                             {produk?.harga_jual.toLocaleString("id-ID")}
                           </span>
                         </div>
-                        <div>
-                          <input
-                            type="number"
-                            min="1"
-                            value={item.quantity}
-                            onChange={(e) => {
-                              const newQuantity = parseInt(e.target.value) || 0;
-                              const updatedProduk = selectedProduk.map((prod) =>
-                                prod.id === item.id
-                                  ? { ...prod, quantity: newQuantity }
-                                  : prod
-                              );
-                              setSelectedProduk(updatedProduk);
-                            }}
-                            className="w-16 border rounded p-1 text-center"
-                          />
+                        <div className="flex items-center gap-2">
+                          <div className="text-center">
+                            <p className="text-sm font-medium text-gray-700">
+                              Diskon
+                            </p>
+                            <input
+                              type="number"
+                              value={item.diskon || 0}
+                              onChange={(e) =>
+                                handleProductChange(
+                                  item.id,
+                                  item.quantity,
+                                  parseInt(e.target.value) || 0
+                                )
+                              }
+                              placeholder="Diskon"
+                              className="w-20 border border-gray-300 rounded-md p-1 text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+
+                          <div className="text-center">
+                            <p className="text-sm font-medium text-gray-700">
+                              Jumlah
+                            </p>
+                            <input
+                              type="number"
+                              min="1"
+                              value={item.quantity}
+                              onChange={(e) => {
+                                const newQuantity =
+                                  parseInt(e.target.value) || 0;
+                                const updatedProduk = selectedProduk.map(
+                                  (prod) =>
+                                    prod.id === item.id
+                                      ? { ...prod, quantity: newQuantity }
+                                      : prod
+                                );
+                                setSelectedProduk(updatedProduk);
+                              }}
+                              className="w-20 border border-gray-300 rounded-md p-1 text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+
                           <button
                             type="button"
-                            className="ml-2 text-red-500 hover:text-red-700"
+                            className=" text-red-500 hover:text-red-700 transition-colors duration-200"
                             onClick={() =>
                               setSelectedProduk(
                                 selectedProduk.filter((p) => p.id !== item.id)
                               )
                             }
                           >
-                            ✕
+                            <X />
                           </button>
                         </div>
                       </div>
                     );
                   })}
                 </div>
-
                 <div className="grid grid-cols-2 gap-4 z-10">
                   <div>
                     <label className="block text-gray-700 font-medium text-sm">

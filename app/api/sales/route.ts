@@ -50,17 +50,9 @@ export async function GET(request: Request) {
       include: {
         detail_penjualan: {
           where: { isDeleted: false },
-          include: {
-            produk: {
-              select: {
-                harga_beli: true,
-              },
-            },
-          },
         },
       },
     });
-
     const totalPenjualan = allSales.reduce((sum, sale) => {
       return sum + Number(sale.total_harga);
     }, 0);
@@ -69,7 +61,7 @@ export async function GET(request: Request) {
       return (
         sum +
         sale.detail_penjualan.reduce((itemSum, item) => {
-          const modal = Number(item.produk.harga_beli) * item.qty;
+          const modal = Number(item.harga_beli) * item.qty;
           const pendapatan = Number(item.total_harga);
           return itemSum + (pendapatan - modal);
         }, 0)
@@ -86,12 +78,14 @@ export async function GET(request: Request) {
         },
         detail_penjualan: {
           where: { isDeleted: false },
-          include: {
+          select: {
+            harga_beli: true,
+            harga_jual: true,
+            qty: true,
+            total_harga: true,
             produk: {
               select: {
                 nama_produk: true,
-                harga_beli: true,
-                harga_jual: true,
               },
             },
           },
@@ -116,7 +110,7 @@ export async function GET(request: Request) {
       }, 0);
 
       const untung = sale.detail_penjualan.reduce((sum, item) => {
-        const modal = Number(item.produk.harga_beli) * item.qty;
+        const modal = Number(item.harga_beli) * item.qty;
         const pendapatan = Number(item.total_harga);
         return sum + (pendapatan - modal);
       }, 0);
@@ -127,7 +121,7 @@ export async function GET(request: Request) {
           sale.tanggal_penjualan,
           "yyyy"
         )}`,
-        tgl_invoice: format(sale.tanggal_penjualan, "dd-MM-yyyy"),
+        tgl_invoice: sale.tanggal_penjualan,
         nama_customer: sale.pelanggan?.nama || "",
         sub_total: subTotal,
         diskon: sale.diskon.toNumber(),

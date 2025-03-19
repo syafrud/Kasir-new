@@ -6,6 +6,7 @@ interface DetailPenjualan {
     harga_jual: number | Decimal;
   };
   harga_jual: number | Decimal;
+  diskon: number | Decimal;
   qty: number;
   total_harga: number | Decimal;
 }
@@ -47,6 +48,10 @@ export const NotaPrint = async (id: number) => {
         typeof value === "string" ? parseFloat(value) : Number(value);
       return numValue.toLocaleString("id-ID");
     };
+
+    const totalItemDiscount = penjualan.detail_penjualan.reduce((sum, item) => {
+      return sum + Number(item.diskon) * item.qty;
+    }, 0);
 
     const subTotal = penjualan.detail_penjualan.reduce((sum, item) => {
       return sum + Number(item.total_harga);
@@ -138,6 +143,22 @@ export const NotaPrint = async (id: number) => {
                   }</span>
                     <span>Rp ${formatCurrency(detail.total_harga)}</span>
                   </div>
+                  ${
+                    Number(detail.diskon) > 0
+                      ? `<div class="flex justify-between text-sm text-gray-600">
+                          <div>
+                            <span>Diskon</span>
+                            <span>Rp -${formatCurrency(
+                              Number(detail.diskon)
+                            )} x ${formatCurrency(Number(detail.qty))}
+                            </span>
+                          </div>
+                          <span>-Rp ${formatCurrency(
+                            Number(detail.diskon) * detail.qty
+                          )}</span>
+                        </div>`
+                      : ""
+                  }
                 </div>
               `
                 )
@@ -150,7 +171,11 @@ export const NotaPrint = async (id: number) => {
                 <span>Rp ${formatCurrency(subTotal)}</span>
               </div>
               <div class="flex justify-between">
-                <span>Diskon</span>
+                <span>Diskon Per Item</span>
+                <span>Rp ${formatCurrency(totalItemDiscount)}</span>
+              </div>
+              <div class="flex justify-between">
+                <span>Diskon Member</span>
                 <span>Rp ${formatCurrency(penjualan.diskon)}</span>
               </div>
               <div class="flex justify-between">

@@ -1,3 +1,4 @@
+// api/detail/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db";
 
@@ -11,9 +12,12 @@ export async function GET(
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search");
 
+    console.log(`Fetching details for penjualan ID: ${parsedId}`);
+
     const details = await prisma.detail_penjualan.findMany({
       where: {
         id_penjualan: parsedId,
+        isDeleted: false,
         ...(search
           ? {
               produk: {
@@ -31,6 +35,8 @@ export async function GET(
       },
       orderBy: { id: "asc" },
     });
+
+    console.log(`Found ${details.length} details`);
 
     return NextResponse.json(details, { status: 200 });
   } catch (error) {

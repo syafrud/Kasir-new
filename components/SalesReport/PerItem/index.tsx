@@ -26,6 +26,7 @@ interface SalesData {
   nama_barang: string;
   harga_satuan_beli: number;
   harga_satuan_jual: number;
+  diskon: number;
   qty_terjual: number;
   neto: number;
   untung: number;
@@ -473,6 +474,7 @@ const PerItemSalesReport = () => {
               <th className="p-2 border">Nama Barang</th>
               <th className="p-2 border">Harga Satuan Beli</th>
               <th className="p-2 border">Harga Satuan Jual</th>
+              <th className="p-2 border">Diskon per Item</th>
               <th className="p-2 border">Qty Terjual</th>
               <th className="p-2 border">Neto</th>
               <th className="p-2 border">Untung (Rugi)</th>
@@ -489,6 +491,9 @@ const PerItemSalesReport = () => {
                 </td>
                 <td className="p-2 border text-right">
                   {item.harga_satuan_jual.toLocaleString()}
+                </td>
+                <td className="p-2 border text-right">
+                  {item.diskon.toLocaleString()}
                 </td>
                 <td className="p-2 border text-center">{item.qty_terjual}</td>
                 <td className="p-2 border text-right">
