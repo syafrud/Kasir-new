@@ -1,36 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# KasirPintar - Aplikasi Kasir
 
-## Getting Started
+KasirPintar adalah aplikasi kasir berbasis web yang dirancang untuk mengelola transaksi penjualan berbagai keperluan rumah tangga dan makanan ringan. Aplikasi ini dibangun menggunakan **Next.js (Pages Router)** dengan **MySQL** sebagai database.
 
-First, run the development server:
+## 🚀 Fitur
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Manajemen produk dan kategori
+- Transaksi penjualan dengan dukungan barcode
+- Cetak invoice
+- Generate laporan penjualan berdasarkan periode
+- Sistem autentikasi dengan **NextAuth.js**
+- Role-based access control (**Admin & Officer**)
+- UI modern menggunakan **Tailwind CSS**
+
+## 🛠 Teknologi yang Digunakan
+
+- **Next.js 15 (Pages Router)**
+- **TypeScript**
+- **Prisma ORM**
+- **MySQL**
+- **NextAuth.js**
+- **Tailwind CSS**
+- **React Hook Form**
+
+## 📦 Instalasi
+
+### 1️⃣ Clone Repository
+
+```sh
+git clone https://github.com/syafrud/kasir-new.git
+cd kasir-new
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2️⃣ Install Dependencies
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```sh
+npm install
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 3️⃣ Konfigurasi Database
 
-## Learn More
+- Setup MySQL dan buat database baru.
+- Buat file .env di root proyek dan tambahkan konfigurasi berikut:
 
-To learn more about Next.js, take a look at the following resources:
+```sh
+DATABASE_URL="mysql://user:password@localhost:3306/kasir"
+NEXTAUTH_SECRET="your-secret-key"
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Jalankan Prisma untuk migrasi database:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```sh
+npx prisma migrate dev --name init
+```
 
-## Deploy on Vercel
+### 4️⃣ Menjalankan Projek
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```sh
+npm run dev
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 📝 Lisensi
+
+Proyek ini menggunakan lisensi MIT.
+
+### 📌 Repository
+
+Source code tersedia di github saya [https://github.com/syafrud/kasir-new]
