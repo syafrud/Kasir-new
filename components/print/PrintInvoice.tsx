@@ -61,29 +61,23 @@ export const PrintInvoice = async (id: number) => {
       return numValue.toLocaleString("id-ID");
     };
 
-    // Calculate the correct pricing with event discount first, then item discount
     penjualan.detail_penjualan = penjualan.detail_penjualan.map((item) => {
       const originalPrice = Number(item.produk.harga_jual);
       let priceAfterEventDiscount = originalPrice;
 
-      // Apply event discount first if available
       if (item.event_produk && item.event_produk.diskon) {
         const eventDiscountAmount =
           originalPrice * (Number(item.event_produk.diskon) / 100);
         priceAfterEventDiscount = originalPrice - eventDiscountAmount;
       }
 
-      // Set the harga_jual to the price after event discount
       item.harga_jual = priceAfterEventDiscount;
 
-      // Calculate the total price (after event discount and considering quantity)
       const totalBeforeItemDiscount = priceAfterEventDiscount * item.qty;
 
-      // Apply per-item discount (diskon field)
       const totalAfterAllDiscounts =
         totalBeforeItemDiscount - Number(item.diskon) * item.qty;
 
-      // Update total_harga to reflect the final price after all discounts
       item.total_harga = totalAfterAllDiscounts;
 
       return item;

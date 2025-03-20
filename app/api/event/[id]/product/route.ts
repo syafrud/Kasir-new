@@ -4,9 +4,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const eventId = parseInt(params.id);
+  const { id } = await context.params;
+  const eventId = parseInt(id);
 
   try {
     const eventProducts = await prisma.event_produk.findMany({
@@ -31,9 +32,10 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const eventId = parseInt(params.id);
+  const { id } = await context.params;
+  const eventId = parseInt(id);
 
   try {
     const body = await request.json();
@@ -46,7 +48,6 @@ export async function POST(
       );
     }
 
-    // Check if product already exists in this event
     const existingProduct = await prisma.event_produk.findFirst({
       where: {
         id_event: eventId,

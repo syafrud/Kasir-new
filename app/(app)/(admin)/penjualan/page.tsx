@@ -110,7 +110,11 @@ export default function PenjualanPage() {
     null
   );
   const [eventProducts, setEventProducts] = useState<{
-    [productId: number]: { eventName: string; discount: number };
+    [productId: number]: {
+      eventName: string;
+      discount: number;
+      eventId: number;
+    };
   }>({});
 
   const [formData, setFormData] = useState<FormData>({
@@ -261,12 +265,9 @@ export default function PenjualanPage() {
       return total + hargaProduk;
     }, 0);
 
-    // Calculate total discounts from products, events, and manual entry
     const totalDiskonProduk = selectedProduk.reduce((acc, item) => {
-      // Manual product discount
       let itemDiscount = (item.diskon || 0) * item.quantity;
 
-      // Add event discount if applicable
       if (eventProducts[item.id]) {
         const produk = produkOptions.find((p) => p.id === item.id);
         if (produk) {
@@ -624,7 +625,19 @@ export default function PenjualanPage() {
 
   useEffect(() => {
     const getActiveEventProducts = async () => {
-      const { events } = await fetchActiveEvents();
+      const {
+        events,
+      }: {
+        events: Array<{
+          id: number;
+          nama_event: string;
+          event_produk: Array<{
+            id_produk: number;
+            diskon: string;
+          }>;
+        }>;
+      } = await fetchActiveEvents();
+
       const productDiscounts: {
         [productId: number]: {
           eventName: string;

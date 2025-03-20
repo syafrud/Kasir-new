@@ -3,10 +3,11 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = parseInt(params.id);
+    const { id } = await context.params;
+    const newId = parseInt(id);
     const body = await request.json();
     const { nama_event, deskripsi, tanggal_mulai, tanggal_selesai } = body;
 
@@ -18,7 +19,7 @@ export async function PUT(
     }
 
     const updatedEvent = await prisma.event.update({
-      where: { id },
+      where: { id: newId },
       data: {
         nama_event,
         deskripsi,

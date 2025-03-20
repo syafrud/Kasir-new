@@ -436,7 +436,7 @@ export async function getAvailableYears(): Promise<number[]> {
       where: {
         isDeleted: false,
         tanggal_penjualan: {
-          not: null,
+          not: "",
         },
       },
       orderBy: {
@@ -451,7 +451,7 @@ export async function getAvailableYears(): Promise<number[]> {
       where: {
         isDeleted: false,
         tanggal_penjualan: {
-          not: null,
+          not: "",
         },
       },
       orderBy: {

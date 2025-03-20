@@ -134,18 +134,14 @@ export default function SalesPage() {
       const customerData = await customerResponse.json();
       const eventsData = await eventsResponse.json();
 
-      // Debug log to see the actual structure of events data
       console.log("Events data:", eventsData);
 
       setProducts(produkData.produk);
       setCustomers(customerData.pelanggan);
       setFilteredCustomers(customerData.pelanggan);
-      setActiveEvents(eventsData.events || []); // Add fallback to empty array
-
-      // Rest of the function remains the same
+      setActiveEvents(eventsData.events || []);
     } catch (error) {
       console.error("Error fetching data:", error);
-      // Initialize with empty array in case of error
       setActiveEvents([]);
     }
   };
@@ -222,15 +218,12 @@ export default function SalesPage() {
     const existingProduct = selectedProducts.find((p) => p.id === product.id);
     const currentStock = product.stok;
 
-    // Check if product is part of any active event
     let eventDiscount = 0;
-    let eventId = null;
-    let eventName = null;
+    let eventId: number | null = null;
+    let eventName: string | undefined = undefined;
 
-    // Safely check if activeEvents exists and is an array
     if (activeEvents && Array.isArray(activeEvents)) {
       for (const event of activeEvents) {
-        // Safely check if event_produk exists and is an array
         if (event && event.event_produk && Array.isArray(event.event_produk)) {
           const eventProduct = event.event_produk.find(
             (ep) => ep.produk && ep.produk.id === product.id
@@ -262,14 +255,13 @@ export default function SalesPage() {
           {
             ...product,
             quantity: 1,
-            diskon: 0, // Awalnya 0, tidak menggunakan persen
+            diskon: 0,
             eventId: eventId,
             eventDiscount: eventDiscount,
             eventName: eventName,
           },
         ]);
 
-        // Show toast if there's an event discount
         if (eventDiscount > 0) {
           toast.success(`Diskon event sebesar ${eventDiscount}% diterapkan!`);
         }
@@ -325,7 +317,7 @@ export default function SalesPage() {
             id: product.id,
             quantity: product.quantity,
             diskon: product.diskon,
-            discount: product.diskon, // Include this for your API
+            discount: product.diskon,
             eventId: product.eventId,
           }))
         )
@@ -544,14 +536,11 @@ export default function SalesPage() {
         if (response.ok) {
           const data = await response.json();
           if (data.produk) {
-            // Check if product is part of any active event before adding
             let eventDiscount = 0;
             let eventId = null;
 
-            // Safely check if activeEvents exists and is an array
             if (activeEvents && Array.isArray(activeEvents)) {
               for (const event of activeEvents) {
-                // Safely check if event_produk exists and is an array
                 if (
                   event &&
                   event.event_produk &&
@@ -569,7 +558,6 @@ export default function SalesPage() {
               }
             }
 
-            // Update product with event discount if applicable
             const productWithEvent = {
               ...data.produk,
               diskon: eventDiscount,
@@ -579,7 +567,6 @@ export default function SalesPage() {
             addProductToSale(productWithEvent);
             setSearchTerm("");
 
-            // Show toast if there's an event discount
             if (eventDiscount > 0) {
               toast.success(
                 `Diskon event sebesar Rp. ${eventDiscount.toLocaleString()} diterapkan!`
@@ -842,7 +829,7 @@ export default function SalesPage() {
                       <p>Rp. {product.harga_jual.toLocaleString()}</p>
 
                       {/* Event discount display */}
-                      {product.eventDiscount > 0 && (
+                      {(product.eventDiscount ?? 0) > 0 && (
                         <p className="text-xs text-green-600">
                           Event: {product.eventName} - Diskon{" "}
                           {product.eventDiscount}%
@@ -869,7 +856,8 @@ export default function SalesPage() {
                       </div>
 
                       {/* Total savings calculation */}
-                      {(product.diskon > 0 || product.eventDiscount > 0) && (
+                      {(product.diskon > 0 ||
+                        (product.eventDiscount ?? 0) > 0) && (
                         <p className="text-sm text-green-600">
                           Total Hemat: Rp.{" "}
                           {calculateTotalDiscount(product).toLocaleString()}

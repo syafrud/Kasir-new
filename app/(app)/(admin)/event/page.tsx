@@ -341,7 +341,6 @@ export default function EventPage() {
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
             className={`px-3 py-1 border rounded ${
-              // Fix the "Next" button styling that got cut off
               currentPage === totalPages ? "bg-gray-100" : "hover:bg-gray-100"
             }`}
           >

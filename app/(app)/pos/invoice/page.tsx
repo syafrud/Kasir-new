@@ -92,7 +92,6 @@ export default function SalesPage() {
       const data = await response.json();
       setActiveEvents(data.events);
 
-      // Create a map of product IDs to event discounts
       const productDiscounts: { [key: number]: any } = {};
       data.events.forEach((event: any) => {
         event.event_produk.forEach((eventProduct: any) => {
@@ -225,22 +224,18 @@ export default function SalesPage() {
         const updatedItem = { ...item, [field]: value };
 
         if (field === "qty" || field === "harga_jual" || field === "diskon") {
-          // Base price calculation
           const basePrice =
             Number(updatedItem.harga_jual) * Number(updatedItem.qty);
 
-          // Calculate event discount if applicable
           const eventDiscount = eventProducts[item.id]
             ? (Number(eventProducts[item.id].discount) / 100) *
               updatedItem.harga_jual *
               updatedItem.qty
             : 0;
 
-          // Calculate product discount (per-item discount * quantity)
           const productDiscount =
             Number(updatedItem.diskon || 0) * Number(updatedItem.qty);
 
-          // Calculate subtotal after all discounts
           updatedItem.subtotal = basePrice - eventDiscount - productDiscount;
         }
 
@@ -251,7 +246,6 @@ export default function SalesPage() {
 
     setEditedItems(updatedItems);
 
-    // Update the invoice totals
     if (editedInvoice) {
       const subTotal = updatedItems.reduce(
         (sum, item) => sum + Number(item.subtotal),
@@ -317,7 +311,6 @@ export default function SalesPage() {
       (item) => item.id === product.id
     );
 
-    // Check if the product has an event discount
     const hasEventDiscount = eventProducts[product.id] ? true : false;
     const eventDiscountPercent = hasEventDiscount
       ? Number(eventProducts[product.id].discount)
@@ -353,15 +346,14 @@ export default function SalesPage() {
         produk_nama: product.nama,
         qty: 1,
         harga_jual: basePrice,
-        diskon: 0, // Start with zero product discount
-        subtotal: basePrice - eventDiscount, // Only apply event discount initially
+        diskon: 0,
+        subtotal: basePrice - eventDiscount,
       };
       newEditedItems = [...editedItems, newItem];
     }
 
     setEditedItems(newEditedItems);
 
-    // Update the invoice totals
     if (editedInvoice) {
       const subTotal = newEditedItems.reduce(
         (sum, item) => sum + item.subtotal,
@@ -493,7 +485,6 @@ export default function SalesPage() {
       formData.append("tanggal_penjualan", dateValue);
 
       const selectedProduk = editedItems.map((item) => {
-        // Get event product ID if available
         const eventProdukId = eventProducts[item.id]?.eventId || null;
 
         return {
@@ -672,7 +663,6 @@ export default function SalesPage() {
     return `Rp ${amount.toLocaleString()}`;
   };
 
-  // Add this utility function for formatting dates with time
   const formatDateWithTime = (dateString: string) => {
     try {
       const date = new Date(dateString);
@@ -692,7 +682,6 @@ export default function SalesPage() {
     }
   };
 
-  // Add this utility function for formatting dates with time in edit mode (DD/MM/YYYY HH.MM)
   const formatDateForEdit = (dateString: string) => {
     try {
       const date = new Date(dateString);
@@ -1131,8 +1120,6 @@ export default function SalesPage() {
                                     Number(e.target.value)
                                   )
                                 }
-                                // Remove this line that disables the input when there's an event
-                                // disabled={eventProducts[item.id] ? true : false}
                               />
                             </div>
 

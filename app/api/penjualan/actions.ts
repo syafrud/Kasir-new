@@ -100,10 +100,8 @@ export async function createPenjualan(formdata: FormData) {
       const itemPrice = produk.harga_jual.toNumber();
       const itemTotalPrice = (itemPrice - itemDiscount) * itemQuantity;
 
-      // Check if this product is part of an event
       let event_produkId = null;
       if (item.eventId) {
-        // If the item has an event associated with it
         const eventProduk = await prisma.event_produk.findUnique({
           where: {
             id_event_id_produk: {

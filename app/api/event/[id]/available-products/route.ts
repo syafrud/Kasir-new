@@ -4,14 +4,14 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const eventId = parseInt(params.id);
+  const { id } = await context.params;
+  const eventId = parseInt(id);
   const searchParams = request.nextUrl.searchParams;
   const search = searchParams.get("search") || "";
 
   try {
-    // Find products already added to this event
     const existingProducts = await prisma.event_produk.findMany({
       where: {
         id_event: eventId,
@@ -24,12 +24,11 @@ export async function GET(
 
     const existingProductIds = existingProducts.map((p) => p.id_produk);
 
-    // Find products not yet added to this event
     const availableProducts = await prisma.produk.findMany({
       where: {
         isDeleted: false,
         id: {
-          notIn: existingProductIds.length > 0 ? existingProductIds : [0], // Avoid empty array
+          notIn: existingProductIds.length > 0 ? existingProductIds : [0],
         },
         nama_produk: {
           contains: search,

@@ -4,9 +4,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const id = parseInt(params.id);
+  const { id } = await context.params;
+  const newID = parseInt(id);
 
   try {
     const body = await request.json();
@@ -21,7 +22,7 @@ export async function PUT(
 
     const eventProduct = await prisma.event_produk.update({
       where: {
-        id: id,
+        id: newID,
       },
       data: {
         diskon: diskon,
@@ -41,14 +42,15 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const id = parseInt(params.id);
+  const { id } = await context.params;
+  const newID = parseInt(id);
 
   try {
     const eventProduct = await prisma.event_produk.update({
       where: {
-        id: id,
+        id: newID,
       },
       data: {
         isDeleted: true,

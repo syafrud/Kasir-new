@@ -140,7 +140,6 @@ export default function EventProductsModal({
 
       if (!res.ok) throw new Error("Failed to update discount");
 
-      // Update local state
       setEventProducts((prevProducts) =>
         prevProducts.map((product) =>
           product.id === id ? { ...product, diskon: discountValue } : product
@@ -167,7 +166,6 @@ export default function EventProductsModal({
 
       if (!res.ok) throw new Error("Failed to remove product");
 
-      // Update local state
       setEventProducts((prevProducts) =>
         prevProducts.filter((product) => product.id !== id)
       );

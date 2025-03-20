@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import SearchBar from "@/components/search";
 import { useParams, useRouter } from "next/navigation";
 import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 import { AlertCircle, ArrowLeft, Printer } from "lucide-react";
 
 interface Detail {
@@ -98,11 +99,9 @@ export default function DetailPage() {
       const text = await res.text();
       const data = text ? JSON.parse(text) : [];
 
-      // Pastikan data adalah array sebelum melakukan reduce
       const detailsArray = Array.isArray(data) ? data : [];
       setDetail(detailsArray);
 
-      // Calculate summary dengan memastikan detailsArray adalah array
       const totalItems = detailsArray.length;
       const totalQuantity = detailsArray.reduce(
         (sum, item) => sum + (item.qty || 0),
@@ -110,7 +109,7 @@ export default function DetailPage() {
       );
 
       const subTotalDiskon = detailsArray.reduce(
-        (sum, item) => sum + (parseFloat(item.diskon * item.qty) || 0),
+        (sum, item) => sum + (Number(item.diskon) * Number(item.qty) || 0),
         0
       );
 
@@ -150,7 +149,7 @@ export default function DetailPage() {
   const formatTanggal = (date: Date) => {
     try {
       const dateObj = new Date(date);
-      return format(dateObj, "HH.mm.ss, EEE, d MMM yyyy", { locale: id });
+      return format(dateObj, "HH.mm.ss, EEE, d MMM yyyy", { locale: localeId });
     } catch (e) {
       return "Invalid date";
     }
@@ -333,7 +332,7 @@ export default function DetailPage() {
                         {formatCurrency(detail.harga_jual)}
                       </td>
                       <td className="py-3 px-4 text-sm text-gray-900 text-right">
-                        {parseFloat(detail.diskon) > 0
+                        {Number(detail.diskon) > 0
                           ? formatCurrency(detail.diskon)
                           : "-"}
                       </td>
@@ -343,7 +342,7 @@ export default function DetailPage() {
                         </span>
                       </td>
                       <td className="py-3 px-4 text-sm text-gray-900 text-right">
-                        {parseFloat(detail.diskon) > 0
+                        {Number(detail.diskon) > 0
                           ? formatCurrency(detail.diskon * detail.qty)
                           : "-"}
                       </td>
