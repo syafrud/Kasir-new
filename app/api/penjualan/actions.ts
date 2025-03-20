@@ -93,20 +93,40 @@ export async function createPenjualan(formdata: FormData) {
         where: { id: item.id },
       });
 
-      const itemDiscount = Number(item.discount || item.diskon || 0);
+      if (!produk) continue;
 
+      const itemDiscount = Number(item.discount || item.diskon || 0);
       const itemQuantity = Number(item.quantity);
-      const itemPrice = produk!.harga_jual.toNumber();
+      const itemPrice = produk.harga_jual.toNumber();
       const itemTotalPrice = (itemPrice - itemDiscount) * itemQuantity;
+
+      // Check if this product is part of an event
+      let event_produkId = null;
+      if (item.eventId) {
+        // If the item has an event associated with it
+        const eventProduk = await prisma.event_produk.findUnique({
+          where: {
+            id_event_id_produk: {
+              id_event: item.eventId,
+              id_produk: item.id,
+            },
+          },
+        });
+
+        if (eventProduk) {
+          event_produkId = eventProduk.id;
+        }
+      }
 
       await prisma.detail_penjualan.create({
         data: {
           id_penjualan: penjualan.id,
           id_produk: item.id,
-          diskon: itemDiscount,
-          harga_beli: produk!.harga_beli,
-          harga_jual: produk!.harga_jual,
+          diskon: new Prisma.Decimal(itemDiscount),
+          harga_beli: produk.harga_beli,
+          harga_jual: produk.harga_jual,
           qty: itemQuantity,
+          event_produkId: event_produkId,
           total_harga: new Prisma.Decimal(itemTotalPrice),
           tanggal_penjualan: new Date(tanggal_penjualan),
           isDeleted: false,
@@ -116,7 +136,7 @@ export async function createPenjualan(formdata: FormData) {
       await prisma.produk.update({
         where: { id: item.id },
         data: {
-          stok: produk!.stok - itemQuantity,
+          stok: produk.stok - itemQuantity,
         },
       });
 
@@ -199,6 +219,7 @@ export async function updatePenjualan(formdata: FormData, id: number) {
         },
       });
     }
+
     await prisma.detail_penjualan.updateMany({
       where: { id_penjualan: id, isDeleted: false },
       data: {
@@ -250,17 +271,37 @@ export async function updatePenjualan(formdata: FormData, id: number) {
 
       if (!produk) continue;
 
+      const itemDiscount = Number(item.discount || item.diskon || 0);
+      const itemQuantity = Number(item.quantity);
+      const itemPrice = produk.harga_jual.toNumber();
+      const itemTotalPrice = (itemPrice - itemDiscount) * itemQuantity;
+
+      let event_produkId = null;
+      if (item.eventId) {
+        const eventProduk = await prisma.event_produk.findUnique({
+          where: {
+            id_event_id_produk: {
+              id_event: item.eventId,
+              id_produk: item.id,
+            },
+          },
+        });
+
+        if (eventProduk) {
+          event_produkId = eventProduk.id;
+        }
+      }
+
       await prisma.detail_penjualan.create({
         data: {
           id_penjualan: id,
           id_produk: item.id,
-          diskon: item.diskon,
+          diskon: new Prisma.Decimal(itemDiscount),
           harga_beli: produk.harga_beli,
           harga_jual: produk.harga_jual,
-          qty: item.quantity,
-          total_harga: new Prisma.Decimal(
-            (produk.harga_jual.toNumber() - item.diskon) * item.quantity
-          ),
+          qty: itemQuantity,
+          event_produkId: event_produkId,
+          total_harga: new Prisma.Decimal(itemTotalPrice),
           tanggal_penjualan: tanggalPenjualan,
           isDeleted: false,
         },
@@ -269,7 +310,7 @@ export async function updatePenjualan(formdata: FormData, id: number) {
       await prisma.produk.update({
         where: { id: item.id },
         data: {
-          stok: produk.stok - item.quantity,
+          stok: produk.stok - itemQuantity,
         },
       });
 
@@ -277,7 +318,7 @@ export async function updatePenjualan(formdata: FormData, id: number) {
         data: {
           id_produk: item.id,
           stockIN: 0,
-          stockOut: item.quantity,
+          stockOut: itemQuantity,
           created_at: tanggalPenjualan,
           isDeleted: false,
         },

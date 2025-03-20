@@ -77,6 +77,39 @@ export default function SalesPage() {
     useState(false);
   const [showDetailCustomerDropdown, setShowDetailCustomerDropdown] =
     useState(false);
+  const [activeEvents, setActiveEvents] = useState<any[]>([]);
+  const [eventProducts, setEventProducts] = useState<{ [key: number]: any }>(
+    {}
+  );
+
+  const fetchActiveEvents = async () => {
+    try {
+      const currentDate = new Date().toISOString();
+      const response = await fetch(`/api/event/active?date=${currentDate}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch active events");
+      }
+      const data = await response.json();
+      setActiveEvents(data.events);
+
+      // Create a map of product IDs to event discounts
+      const productDiscounts: { [key: number]: any } = {};
+      data.events.forEach((event: any) => {
+        event.event_produk.forEach((eventProduct: any) => {
+          productDiscounts[eventProduct.id_produk] = {
+            eventId: event.id,
+            eventName: event.nama_event,
+            discount: Number(eventProduct.diskon),
+            productId: eventProduct.id_produk,
+            productName: eventProduct.produk.nama_produk,
+          };
+        });
+      });
+      setEventProducts(productDiscounts);
+    } catch (error) {
+      console.error("Error fetching active events:", error);
+    }
+  };
 
   const fetchCustomers = async (searchTerm: string) => {
     try {
@@ -149,11 +182,11 @@ export default function SalesPage() {
     if (selectedInvoice) {
       setEditedInvoice({
         ...selectedInvoice,
-        // Keep the original date string without reformatting
         tanggal_penjualan: selectedInvoice.tgl_invoice,
       });
       setEditedItems([...(selectedInvoice.items || [])]);
       fetchProducts();
+      fetchActiveEvents();
       setIsEditMode(true);
     }
   };
@@ -191,16 +224,24 @@ export default function SalesPage() {
       if (item.id === itemId) {
         const updatedItem = { ...item, [field]: value };
 
-        // Initialize diskon property if it doesn't exist
-        if (!updatedItem.diskon && updatedItem.diskon !== 0) {
-          updatedItem.diskon = 0;
-        }
-
         if (field === "qty" || field === "harga_jual" || field === "diskon") {
-          // Calculate new subtotal considering discount
-          const priceAfterDiscount =
-            Number(updatedItem.harga_jual) - Number(updatedItem.diskon || 0);
-          updatedItem.subtotal = Number(updatedItem.qty) * priceAfterDiscount;
+          // Base price calculation
+          const basePrice =
+            Number(updatedItem.harga_jual) * Number(updatedItem.qty);
+
+          // Calculate event discount if applicable
+          const eventDiscount = eventProducts[item.id]
+            ? (Number(eventProducts[item.id].discount) / 100) *
+              updatedItem.harga_jual *
+              updatedItem.qty
+            : 0;
+
+          // Calculate product discount (per-item discount * quantity)
+          const productDiscount =
+            Number(updatedItem.diskon || 0) * Number(updatedItem.qty);
+
+          // Calculate subtotal after all discounts
+          updatedItem.subtotal = basePrice - eventDiscount - productDiscount;
         }
 
         return updatedItem;
@@ -210,6 +251,7 @@ export default function SalesPage() {
 
     setEditedItems(updatedItems);
 
+    // Update the invoice totals
     if (editedInvoice) {
       const subTotal = updatedItems.reduce(
         (sum, item) => sum + Number(item.subtotal),
@@ -275,34 +317,51 @@ export default function SalesPage() {
       (item) => item.id === product.id
     );
 
+    // Check if the product has an event discount
+    const hasEventDiscount = eventProducts[product.id] ? true : false;
+    const eventDiscountPercent = hasEventDiscount
+      ? Number(eventProducts[product.id].discount)
+      : 0;
+
     let newEditedItems;
     if (existingItemIndex >= 0) {
       newEditedItems = editedItems.map((item, index) => {
         if (index === existingItemIndex) {
           const newQty = Number(item.qty) + 1;
+          const basePrice = Number(item.harga_jual) * newQty;
+          const eventDiscount = hasEventDiscount
+            ? (eventDiscountPercent / 100) * Number(item.harga_jual) * newQty
+            : 0;
+          const productDiscount = Number(item.diskon || 0) * newQty;
+
           return {
             ...item,
             qty: newQty,
-            subtotal:
-              newQty * (Number(item.harga_jual) - Number(item.diskon || 0)),
+            subtotal: basePrice - eventDiscount - productDiscount,
           };
         }
         return item;
       });
     } else {
+      const basePrice = Number(product.harga_jual);
+      const eventDiscount = hasEventDiscount
+        ? (eventDiscountPercent / 100) * basePrice
+        : 0;
+
       const newItem: InvoiceItem = {
         id: product.id,
         produk_nama: product.nama,
         qty: 1,
-        harga_jual: Number(product.harga_jual),
-        diskon: 0, // Initialize discount to 0
-        subtotal: Number(product.harga_jual),
+        harga_jual: basePrice,
+        diskon: 0, // Start with zero product discount
+        subtotal: basePrice - eventDiscount, // Only apply event discount initially
       };
       newEditedItems = [...editedItems, newItem];
     }
 
     setEditedItems(newEditedItems);
 
+    // Update the invoice totals
     if (editedInvoice) {
       const subTotal = newEditedItems.reduce(
         (sum, item) => sum + item.subtotal,
@@ -433,11 +492,17 @@ export default function SalesPage() {
         : new Date().toISOString();
       formData.append("tanggal_penjualan", dateValue);
 
-      const selectedProduk = editedItems.map((item) => ({
-        id: item.id,
-        quantity: item.qty,
-        diskon: item.diskon || 0,
-      }));
+      const selectedProduk = editedItems.map((item) => {
+        // Get event product ID if available
+        const eventProdukId = eventProducts[item.id]?.eventId || null;
+
+        return {
+          id: item.id,
+          quantity: item.qty,
+          diskon: item.diskon || 0,
+          event_produkId: eventProdukId,
+        };
+      });
       formData.append("selectedProduk", JSON.stringify(selectedProduk));
 
       await updatePenjualan(formData, editedInvoice.id);
@@ -603,38 +668,8 @@ export default function SalesPage() {
       customer.toLowerCase().includes(customerSearchTerm.toLowerCase())
   );
 
-  const formatDate = (dateString: string) => {
-    try {
-      const parts = dateString.split("-");
-      if (parts.length === 3) {
-        return `${parts[0]}-${parts[1]}-${parts[2]}`;
-      }
-      return dateString;
-    } catch (error) {
-      return dateString;
-    }
-  };
-
   const formatCurrency = (amount: number) => {
     return `Rp ${amount.toLocaleString()}`;
-  };
-
-  const formatDateForInput = (date: Date | string | undefined): string => {
-    if (!date) return "";
-
-    if (typeof date === "string") {
-      if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-        return date;
-      }
-
-      const parsedDate = new Date(date);
-      if (!isNaN(parsedDate.getTime())) {
-        return format(parsedDate, "yyyy-MM-dd");
-      }
-      return "";
-    }
-
-    return format(date, "yyyy-MM-dd");
   };
 
   // Add this utility function for formatting dates with time
@@ -1062,14 +1097,30 @@ export default function SalesPage() {
                           className="flex justify-between items-center border-b pb-1 mb-1"
                         >
                           <div className="flex flex-col">
-                            <p className="text-gray-600">{item.produk_nama}</p>
-                            <p className="text-gray-600">{item.harga_jual}</p>
+                            <p className="font-semibold">{item.produk_nama}</p>
+                            <p>Rp. {item.harga_jual.toLocaleString()}</p>
+
+                            {/* Event discount (percentage-based) */}
+                            {eventProducts[item.id] && (
+                              <p className="text-xs text-green-600">
+                                Event: {eventProducts[item.id].eventName} -
+                                Diskon {eventProducts[item.id].discount}% (Rp.{" "}
+                                {(
+                                  (eventProducts[item.id].discount / 100) *
+                                  item.harga_jual
+                                ).toLocaleString()}
+                                )
+                              </p>
+                            )}
+
+                            {/* Product discount (absolute value) */}
                             <div className="flex items-center space-x-2 mt-1">
-                              <label className="text-sm">Diskon:</label>
-                              <span className="text-sm">Rp.</span>
+                              <label className="text-sm">
+                                Diskon Produk (Rp):
+                              </label>
                               <input
                                 type="number"
-                                className="border p-1 w-16"
+                                className="w-24 text-center"
                                 value={item.diskon || 0}
                                 min="0"
                                 max={item.harga_jual}
@@ -1080,22 +1131,43 @@ export default function SalesPage() {
                                     Number(e.target.value)
                                   )
                                 }
+                                // Remove this line that disables the input when there's an event
+                                // disabled={eventProducts[item.id] ? true : false}
                               />
                             </div>
-                            {item.diskon > 0 && (
+
+                            {/* Total savings display */}
+                            {(item.diskon > 0 || eventProducts[item.id]) && (
                               <p className="text-sm text-green-600">
-                                Hemat: Rp.{" "}
+                                Total Hemat: Rp.{" "}
                                 {(
-                                  (item.diskon || 0) * item.qty
+                                  (eventProducts[item.id]
+                                    ? (eventProducts[item.id].discount / 100) *
+                                      item.harga_jual
+                                    : 0) *
+                                    item.qty +
+                                  Number(item.diskon || 0) * item.qty
                                 ).toLocaleString()}
                               </p>
                             )}
                           </div>
 
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center space-x-2">
+                            <button
+                              className=""
+                              onClick={() =>
+                                handleItemChange(
+                                  item.id,
+                                  "qty",
+                                  Math.max(1, item.qty - 1)
+                                )
+                              }
+                            >
+                              <span className="text-xl">−</span>
+                            </button>
                             <input
                               type="number"
-                              className="border p-1 w-16"
+                              className="w-16 text-center"
                               value={item.qty}
                               min="1"
                               onChange={(e) =>
@@ -1106,14 +1178,18 @@ export default function SalesPage() {
                                 )
                               }
                             />
-                            <p className="font-medium w-24 text-right">
-                              {formatCurrency(item.subtotal)}
-                            </p>
                             <button
-                              className="text-red-500 px-2"
+                              onClick={() =>
+                                handleItemChange(item.id, "qty", item.qty + 1)
+                              }
+                            >
+                              <span className="text-xl">+</span>
+                            </button>
+                            <button
+                              className=""
                               onClick={() => handleRemoveItem(item.id)}
                             >
-                              ×
+                              <span className="text-xl">×</span>
                             </button>
                           </div>
                         </div>

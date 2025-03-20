@@ -26,13 +26,15 @@ model detail_penjualan {
   harga_jual        Decimal
   diskon            Decimal   @default(0)
   qty               Int
+  event_produkId    Int?
   total_harga       Decimal
   tanggal_penjualan DateTime
   isDeleted         Boolean   @default(false)
   deletedAt         DateTime?
 
-  penjualan penjualan @relation(fields: [id_penjualan], references: [id])
-  produk    produk    @relation(fields: [id_produk], references: [id])
+  event_produk event_produk? @relation(fields: [event_produkId], references: [id])
+  penjualan    penjualan     @relation(fields: [id_penjualan], references: [id])
+  produk       produk        @relation(fields: [id_produk], references: [id])
 }
 
 model penjualan {
@@ -154,8 +156,9 @@ model event_produk {
   isDeleted  Boolean   @default(false)
   deletedAt  DateTime?
 
-  event  event  @relation(fields: [id_event], references: [id], onDelete: Cascade)
-  produk produk @relation(fields: [id_produk], references: [id], onDelete: Cascade)
+  detail_penjualan detail_penjualan[]
+  event            event              @relation(fields: [id_event], references: [id], onDelete: Cascade)
+  produk           produk             @relation(fields: [id_produk], references: [id], onDelete: Cascade)
 
   @@unique([id_event, id_produk])
 }

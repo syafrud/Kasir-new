@@ -109,6 +109,9 @@ export default function PenjualanPage() {
   const [penjualanToDelete, setPenjualanToDelete] = useState<number | null>(
     null
   );
+  const [eventProducts, setEventProducts] = useState<{
+    [productId: number]: { eventName: string; discount: number };
+  }>({});
 
   const [formData, setFormData] = useState<FormData>({
     id_user: "",
@@ -258,27 +261,47 @@ export default function PenjualanPage() {
       return total + hargaProduk;
     }, 0);
 
+    // Calculate total discounts from products, events, and manual entry
     const totalDiskonProduk = selectedProduk.reduce((acc, item) => {
-      return acc + (item.diskon || 0) * item.quantity;
+      // Manual product discount
+      let itemDiscount = (item.diskon || 0) * item.quantity;
+
+      // Add event discount if applicable
+      if (eventProducts[item.id]) {
+        const produk = produkOptions.find((p) => p.id === item.id);
+        if (produk) {
+          const eventDiscountAmount =
+            produk.harga_jual *
+            item.quantity *
+            (eventProducts[item.id].discount / 100);
+          itemDiscount += eventDiscountAmount;
+        }
+      }
+
+      return acc + itemDiscount;
     }, 0);
 
-    const diskonPelanggan = isPelanggan
-      ? Math.round(totalHargaSebelumDiskon * 0.1)
-      : 0;
-
-    const totalSetelahDiskon =
-      totalHargaSebelumDiskon - totalDiskonProduk - diskonPelanggan;
+    const totalSetelahDiskon = totalHargaSebelumDiskon - totalDiskonProduk;
 
     const penyesuaian = parseCurrency(formData.penyesuaian);
+    const diskonPelanggan = isPelanggan
+      ? Math.round(totalSetelahDiskon * 0.1)
+      : 0;
 
-    const totalAkhir = totalSetelahDiskon + penyesuaian;
+    const totalAkhir = totalSetelahDiskon + penyesuaian - diskonPelanggan;
 
     setFormData((prev) => ({
       ...prev,
       total_harga: Math.round(totalAkhir).toString(),
       diskon: diskonPelanggan.toString(),
     }));
-  }, [selectedProduk, isPelanggan, produkOptions, formData.penyesuaian]);
+  }, [
+    selectedProduk,
+    isPelanggan,
+    produkOptions,
+    formData.penyesuaian,
+    eventProducts,
+  ]);
 
   const parseCurrency = (value: string) => {
     if (!value) return 0;
@@ -510,7 +533,20 @@ export default function PenjualanPage() {
       );
 
       submitData.append("tanggal_penjualan", formData.tanggal_penjualan);
-      submitData.append("selectedProduk", JSON.stringify(selectedProduk));
+
+      const productsWithEventInfo = selectedProduk.map((item) => {
+        const eventInfo = eventProducts[item.id];
+        return {
+          ...item,
+          eventDiscount: eventInfo ? Number(eventInfo.discount) : 0,
+          eventId: eventInfo ? eventInfo.eventId : null,
+        };
+      });
+
+      submitData.append(
+        "selectedProduk",
+        JSON.stringify(productsWithEventInfo)
+      );
 
       if (isEditing && editPenjualan) {
         await updatePenjualan(submitData, editPenjualan.id);
@@ -572,6 +608,51 @@ export default function PenjualanPage() {
       }));
     }
   };
+  const fetchActiveEvents = async () => {
+    try {
+      const currentDate = new Date().toISOString();
+      const response = await fetch(`/api/event/active?date=${currentDate}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error("Error fetching active events:", error);
+      return { events: [] };
+    }
+  };
+
+  useEffect(() => {
+    const getActiveEventProducts = async () => {
+      const { events } = await fetchActiveEvents();
+      const productDiscounts: {
+        [productId: number]: {
+          eventName: string;
+          discount: number;
+          eventId: number;
+        };
+      } = {};
+
+      events.forEach((event) => {
+        event.event_produk.forEach((ep) => {
+          if (
+            !productDiscounts[ep.id_produk] ||
+            Number(ep.diskon) > productDiscounts[ep.id_produk].discount
+          ) {
+            productDiscounts[ep.id_produk] = {
+              eventName: event.nama_event,
+              discount: Number(ep.diskon),
+              eventId: event.id,
+            };
+          }
+        });
+      });
+
+      setEventProducts(productDiscounts);
+    };
+
+    getActiveEventProducts();
+  }, []);
 
   const formatCurrency = (value: string) => {
     if (!value) return "";
@@ -813,7 +894,6 @@ export default function PenjualanPage() {
                     </select>
                   </div>
                 </div>
-
                 {isPelanggan && (
                   <div>
                     <PelangganSearch
@@ -827,7 +907,6 @@ export default function PenjualanPage() {
                     />
                   </div>
                 )}
-
                 {/* Produk Selection */}
                 <SearchBarProduk
                   onSelect={(produk) => {
@@ -851,11 +930,12 @@ export default function PenjualanPage() {
                     });
                   }}
                 />
-
-                {/* Selected Products List */}
+                Copy{/* Selected Products List */}
                 <div className="mt-2">
                   {selectedProduk.map((item, index) => {
                     const produk = produkOptions.find((p) => p.id === item.id);
+                    const hasEventDiscount = eventProducts[item.id];
+
                     return (
                       <div
                         key={index}
@@ -879,10 +959,18 @@ export default function PenjualanPage() {
                               </div>
                             )}
                           </div>
-                          <span>
-                            {produk?.nama_produk} - Rp{" "}
-                            {produk?.harga_jual.toLocaleString("id-ID")}
-                          </span>
+                          <div>
+                            <span>
+                              {produk?.nama_produk} - Rp{" "}
+                              {produk?.harga_jual.toLocaleString("id-ID")}
+                            </span>
+                            {hasEventDiscount && (
+                              <span className="text-xs text-green-600 block">
+                                Event: {hasEventDiscount.eventName} - Diskon{" "}
+                                {hasEventDiscount.discount}%
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="text-center">
@@ -984,7 +1072,6 @@ export default function PenjualanPage() {
                     </div>
                   </div>
                 </div>
-
                 {/* New fields */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 z-10">
                   <div>
@@ -1045,7 +1132,6 @@ export default function PenjualanPage() {
                     </div>
                   </div>
                 </div>
-
                 <div>
                   <label className="block text-gray-700 font-medium text-sm">
                     Tanggal & Waktu Penjualan

@@ -1,5 +1,6 @@
 import { Decimal } from "@prisma/client/runtime/library";
 import toast from "react-hot-toast";
+
 interface DetailPenjualan {
   produk: {
     nama_produk: string;
@@ -9,6 +10,12 @@ interface DetailPenjualan {
   diskon: number | Decimal;
   qty: number;
   total_harga: number | Decimal;
+  event_produk?: {
+    event: {
+      nama_event: string;
+    };
+    diskon: number | Decimal;
+  } | null;
 }
 
 interface Penjualan {
@@ -48,6 +55,34 @@ export const NotaPrint = async (id: number) => {
         typeof value === "string" ? parseFloat(value) : Number(value);
       return numValue.toLocaleString("id-ID");
     };
+
+    // Calculate the correct pricing with event discount first, then item discount
+    penjualan.detail_penjualan = penjualan.detail_penjualan.map((item) => {
+      const originalPrice = Number(item.produk.harga_jual);
+      let priceAfterEventDiscount = originalPrice;
+
+      // Apply event discount first if available
+      if (item.event_produk && item.event_produk.diskon) {
+        const eventDiscountAmount =
+          originalPrice * (Number(item.event_produk.diskon) / 100);
+        priceAfterEventDiscount = originalPrice - eventDiscountAmount;
+      }
+
+      // Set the harga_jual to the price after event discount
+      item.harga_jual = priceAfterEventDiscount;
+
+      // Calculate the total price (after event discount and considering quantity)
+      const totalBeforeItemDiscount = priceAfterEventDiscount * item.qty;
+
+      // Apply per-item discount (diskon field)
+      const totalAfterAllDiscounts =
+        totalBeforeItemDiscount - Number(item.diskon) * item.qty;
+
+      // Update total_harga to reflect the final price after all discounts
+      item.total_harga = totalAfterAllDiscounts;
+
+      return item;
+    });
 
     const totalItemDiscount = penjualan.detail_penjualan.reduce((sum, item) => {
       return sum + Number(item.diskon) * item.qty;
@@ -131,39 +166,66 @@ export const NotaPrint = async (id: number) => {
               </div>
             </div>
 
-            <div class="border-b border-dashed border-gray-400 py-2">
-              ${penjualan.detail_penjualan
-                .map(
-                  (detail: DetailPenjualan) => ` 
-                <div class="mb-2">
-                  <div>${detail.produk.nama_produk}</div>
-                  <div class="flex justify-between">
-                    <span>Rp ${formatCurrency(detail.harga_jual)} x ${
-                    detail.qty
-                  }</span>
-                    <span>Rp ${formatCurrency(detail.total_harga)}</span>
-                  </div>
-                  ${
-                    Number(detail.diskon) > 0
-                      ? `<div class="flex justify-between text-sm text-gray-600">
-                          <div>
-                            <span>Diskon</span>
-                            <span>Rp -${formatCurrency(
-                              Number(detail.diskon)
-                            )} x ${formatCurrency(Number(detail.qty))}
-                            </span>
-                          </div>
-                          <span>-Rp ${formatCurrency(
-                            Number(detail.diskon) * detail.qty
-                          )}</span>
-                        </div>`
-                      : ""
-                  }
-                </div>
-              `
-                )
-                .join("")}
-            </div>
+<div class="border-b border-dashed border-gray-400 py-2">
+  ${penjualan.detail_penjualan
+    .map(
+      (detail: DetailPenjualan) => ` 
+    <div class="mb-2">
+      <div>${detail.produk.nama_produk}</div>
+      <div class="flex justify-between">
+        <span>${
+          detail.event_produk?.event?.nama_event
+            ? `<span class="text-sm text-gray-600">
+                Harga asli: Rp ${formatCurrency(detail.produk.harga_jual)}
+               </span>`
+            : ""
+        }</span>
+      </div>
+      ${
+        detail.event_produk?.event?.nama_event
+          ? `<div class="flex justify-between text-sm text-gray-600">
+              <span>${detail.event_produk.event.nama_event} 
+                    (Diskon ${Number(detail.event_produk.diskon)}%)
+              </span>
+              <span>-Rp ${formatCurrency(
+                Number(detail.produk.harga_jual) *
+                  (Number(detail.event_produk.diskon) / 100) *
+                  detail.qty
+              )}</span>
+            </div>`
+          : ""
+      }
+      <div class="flex justify-between">
+        <span>Rp ${formatCurrency(detail.harga_jual)} x ${detail.qty}</span>
+        <span>Rp ${formatCurrency(
+          Number(detail.harga_jual) * detail.qty
+        )}</span>
+      </div>
+      ${
+        Number(detail.diskon) > 0
+          ? `<div class="flex justify-between text-sm text-gray-600">
+              <div>
+                <span>Diskon per item</span>
+                <span>Rp -${formatCurrency(
+                  Number(detail.diskon)
+                )} x ${formatCurrency(Number(detail.qty))}
+                </span>
+              </div>
+              <span>-Rp ${formatCurrency(
+                Number(detail.diskon) * detail.qty
+              )}</span>
+            </div>`
+          : ""
+      }
+      <div class="flex justify-between font-semibold">
+        <span>Total</span>
+        <span>Rp ${formatCurrency(detail.total_harga)}</span>
+      </div>
+    </div>
+  `
+    )
+    .join("")}
+</div>
 
             <div class="py-2">
               <div class="flex justify-between">

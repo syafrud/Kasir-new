@@ -6,11 +6,19 @@ interface Produk {
 }
 
 interface DetailPenjualan {
-  produk: Produk;
+  produk: Produk & {
+    harga_jual: number | Decimal;
+  };
   qty: number;
   harga_jual: string | number | Decimal;
   total_harga: string | number | Decimal;
   diskon: string | number | Decimal;
+  event_produk?: {
+    event: {
+      nama_event: string;
+    };
+    diskon: number | Decimal;
+  } | null;
 }
 
 interface Pelanggan {
@@ -52,6 +60,34 @@ export const PrintInvoice = async (id: number) => {
         typeof value === "string" ? parseFloat(value) : Number(value);
       return numValue.toLocaleString("id-ID");
     };
+
+    // Calculate the correct pricing with event discount first, then item discount
+    penjualan.detail_penjualan = penjualan.detail_penjualan.map((item) => {
+      const originalPrice = Number(item.produk.harga_jual);
+      let priceAfterEventDiscount = originalPrice;
+
+      // Apply event discount first if available
+      if (item.event_produk && item.event_produk.diskon) {
+        const eventDiscountAmount =
+          originalPrice * (Number(item.event_produk.diskon) / 100);
+        priceAfterEventDiscount = originalPrice - eventDiscountAmount;
+      }
+
+      // Set the harga_jual to the price after event discount
+      item.harga_jual = priceAfterEventDiscount;
+
+      // Calculate the total price (after event discount and considering quantity)
+      const totalBeforeItemDiscount = priceAfterEventDiscount * item.qty;
+
+      // Apply per-item discount (diskon field)
+      const totalAfterAllDiscounts =
+        totalBeforeItemDiscount - Number(item.diskon) * item.qty;
+
+      // Update total_harga to reflect the final price after all discounts
+      item.total_harga = totalAfterAllDiscounts;
+
+      return item;
+    });
 
     const totalItemDiscount = penjualan.detail_penjualan.reduce((sum, item) => {
       return sum + Number(item.diskon) * item.qty;
@@ -161,9 +197,10 @@ export const PrintInvoice = async (id: number) => {
                     <th class="border border-gray-300 p-2 text-left w-16">No</th>
                     <th class="border border-gray-300 p-2 text-left">Deskripsi</th>
                     <th class="border border-gray-300 p-2 text-center">Kuantitas</th>
-                    <th class="border border-gray-300 p-2 text-center">Harga Satuan</th>
-                    <th class="border border-gray-300 p-2 text-center">Diskon</th>
-                    <th class="border border-gray-300 p-2 text-center">Total Diskon</th>
+                    <th class="border border-gray-300 p-2 text-center">Harga Asli</th>
+                    <th class="border border-gray-300 p-2 text-center">Event Diskon</th>
+                    <th class="border border-gray-300 p-2 text-center">Harga Setelah Event</th>
+                    <th class="border border-gray-300 p-2 text-center">Diskon Item</th>
                     <th class="border border-gray-300 p-2 text-center">Total</th>
                   </tr>
                 </thead>
@@ -175,17 +212,34 @@ export const PrintInvoice = async (id: number) => {
                       <td class="border border-gray-300 p-2 text-center">${
                         index + 1
                       }</td>
-                      <td class="border border-gray-300 p-2">${
-                        detail.produk.nama_produk
-                      }</td>
+                      <td class="border border-gray-300 p-2">
+                        ${detail.produk.nama_produk}
+                        ${
+                          detail.event_produk?.event?.nama_event
+                            ? `<div class="text-sm text-gray-600">${detail.event_produk.event.nama_event}</div>`
+                            : ""
+                        }
+                      </td>
                       <td class="border border-gray-300 p-2 text-center">${
                         detail.qty
                       }</td>
+                      <td class="border border-gray-300 p-2 text-right">Rp ${
+                        detail.event_produk
+                          ? formatCurrency(detail.produk.harga_jual)
+                          : formatCurrency(detail.harga_jual)
+                      }</td>
+                      <td class="border border-gray-300 p-2 text-right">${
+                        detail.event_produk
+                          ? `${Number(
+                              detail.event_produk.diskon
+                            )}% <br> (-Rp ${formatCurrency(
+                              Number(detail.produk.harga_jual) *
+                                (Number(detail.event_produk.diskon) / 100)
+                            )})`
+                          : "-"
+                      }</td>
                       <td class="border border-gray-300 p-2 text-right">Rp ${formatCurrency(
                         detail.harga_jual
-                      )}</td>
-                      <td class="border border-gray-300 p-2 text-right">Rp ${formatCurrency(
-                        Number(detail.diskon)
                       )}</td>
                       <td class="border border-gray-300 p-2 text-right">Rp ${formatCurrency(
                         Number(detail.diskon) * detail.qty
@@ -206,6 +260,22 @@ export const PrintInvoice = async (id: number) => {
                     <td class="border border-gray-300 p-2 font-bold">Subtotal</td>
                     <td class="border border-gray-300 p-2 text-right">Rp ${formatCurrency(
                       subTotal
+                    )}</td>
+                  </tr>
+                  <tr>
+                    <td class="border border-gray-300 p-2 font-bold">Total Event Diskon</td>
+                    <td class="border border-gray-300 p-2 text-right">Rp ${formatCurrency(
+                      penjualan.detail_penjualan.reduce((sum, item) => {
+                        if (item.event_produk && item.event_produk.diskon) {
+                          return (
+                            sum +
+                            Number(item.produk.harga_jual) *
+                              (Number(item.event_produk.diskon) / 100) *
+                              item.qty
+                          );
+                        }
+                        return sum;
+                      }, 0)
                     )}</td>
                   </tr>
                   <tr>

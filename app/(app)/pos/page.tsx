@@ -48,13 +48,42 @@ interface Customer {
   status: string;
 }
 
+interface EventProduct {
+  id: number;
+  id_event: number;
+  id_produk: number;
+  diskon: number;
+  produk: {
+    id: number;
+    nama_produk: string;
+    harga_jual: number;
+  };
+}
+
+interface Event {
+  id: number;
+  nama_event: string;
+  tanggal_mulai: string;
+  tanggal_selesai: string;
+  event_produk: EventProduct[];
+}
+
 export default function SalesPage() {
   const { data: session } = useSession();
   const [pageSize, setPageSize] = useState(5);
   const [products, setProducts] = useState<Produk[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<
-    (Produk & { quantity: number; diskon: number })[]
+    (Produk & {
+      quantity: number;
+      diskon: number;
+      eventId?: number | null;
+      eventDiscount?: number;
+      eventName?: string;
+    })[]
   >([]);
+  const [productEvents, setProductEvents] = useState<{
+    [key: number]: { eventName: string; discount: number };
+  }>({});
   const [lastSaleId, setLastSaleId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [customerSearchTerm, setCustomerSearchTerm] = useState<string>("");
@@ -90,34 +119,34 @@ export default function SalesPage() {
     currentPage: 1,
   });
   const [productPageSize, setProductPageSize] = useState(5);
+  const [activeEvents, setActiveEvents] = useState<Event[]>([]);
 
   const fetchInitialData = async () => {
     try {
-      const [produkResponse, customerResponse] = await Promise.all([
-        fetch(`/api/produk?page=1&limit=${productPageSize}`),
-        fetch("/api/pelanggan"),
-      ]);
+      const [produkResponse, customerResponse, eventsResponse] =
+        await Promise.all([
+          fetch(`/api/produk?page=1&limit=${productPageSize}`),
+          fetch("/api/pelanggan"),
+          fetch(`/api/event/active?date=${new Date().toISOString()}`),
+        ]);
 
       const produkData = await produkResponse.json();
       const customerData = await customerResponse.json();
+      const eventsData = await eventsResponse.json();
+
+      // Debug log to see the actual structure of events data
+      console.log("Events data:", eventsData);
 
       setProducts(produkData.produk);
       setCustomers(customerData.pelanggan);
       setFilteredCustomers(customerData.pelanggan);
+      setActiveEvents(eventsData.events || []); // Add fallback to empty array
 
-      setPagination({
-        totalCount: customerData.totalCount,
-        totalPages: customerData.totalPages,
-        currentPage: customerData.currentPage,
-      });
-
-      setProductPagination({
-        totalCount: produkData.totalCount || 0,
-        totalPages: produkData.totalPages || 1,
-        currentPage: produkData.currentPage || 1,
-      });
+      // Rest of the function remains the same
     } catch (error) {
       console.error("Error fetching data:", error);
+      // Initialize with empty array in case of error
+      setActiveEvents([]);
     }
   };
 
@@ -159,8 +188,14 @@ export default function SalesPage() {
   const calculateSubTotal = () => {
     return selectedProducts.reduce((total, product) => {
       const productPrice = product.harga_jual * product.quantity;
-      const productDiscount = product.diskon * product.quantity;
-      return total + (productPrice - productDiscount);
+      const productDiscountAmount = product.diskon * product.quantity;
+      const eventDiscountAmount = product.eventDiscount
+        ? (product.eventDiscount / 100) * product.harga_jual * product.quantity
+        : 0;
+
+      return (
+        total + (productPrice - productDiscountAmount - eventDiscountAmount)
+      );
     }, 0);
   };
 
@@ -187,6 +222,29 @@ export default function SalesPage() {
     const existingProduct = selectedProducts.find((p) => p.id === product.id);
     const currentStock = product.stok;
 
+    // Check if product is part of any active event
+    let eventDiscount = 0;
+    let eventId = null;
+    let eventName = null;
+
+    // Safely check if activeEvents exists and is an array
+    if (activeEvents && Array.isArray(activeEvents)) {
+      for (const event of activeEvents) {
+        // Safely check if event_produk exists and is an array
+        if (event && event.event_produk && Array.isArray(event.event_produk)) {
+          const eventProduct = event.event_produk.find(
+            (ep) => ep.produk && ep.produk.id === product.id
+          );
+          if (eventProduct) {
+            eventDiscount = eventProduct.diskon;
+            eventId = event.id;
+            eventName = event.nama_event;
+            break;
+          }
+        }
+      }
+    }
+
     if (existingProduct) {
       if (existingProduct.quantity < currentStock) {
         setSelectedProducts(
@@ -204,9 +262,17 @@ export default function SalesPage() {
           {
             ...product,
             quantity: 1,
-            diskon: 0,
+            diskon: 0, // Awalnya 0, tidak menggunakan persen
+            eventId: eventId,
+            eventDiscount: eventDiscount,
+            eventName: eventName,
           },
         ]);
+
+        // Show toast if there's an event discount
+        if (eventDiscount > 0) {
+          toast.success(`Diskon event sebesar ${eventDiscount}% diterapkan!`);
+        }
       } else {
         toast.error(`Stok produk ${product.nama_produk} habis`);
       }
@@ -258,7 +324,9 @@ export default function SalesPage() {
           selectedProducts.map((product) => ({
             id: product.id,
             quantity: product.quantity,
-            discount: product.diskon,
+            diskon: product.diskon,
+            discount: product.diskon, // Include this for your API
+            eventId: product.eventId,
           }))
         )
       );
@@ -476,8 +544,47 @@ export default function SalesPage() {
         if (response.ok) {
           const data = await response.json();
           if (data.produk) {
-            addProductToSale(data.produk);
+            // Check if product is part of any active event before adding
+            let eventDiscount = 0;
+            let eventId = null;
+
+            // Safely check if activeEvents exists and is an array
+            if (activeEvents && Array.isArray(activeEvents)) {
+              for (const event of activeEvents) {
+                // Safely check if event_produk exists and is an array
+                if (
+                  event &&
+                  event.event_produk &&
+                  Array.isArray(event.event_produk)
+                ) {
+                  const eventProduct = event.event_produk.find(
+                    (ep) => ep.produk && ep.produk.id === data.produk.id
+                  );
+                  if (eventProduct) {
+                    eventDiscount = eventProduct.diskon;
+                    eventId = event.id;
+                    break;
+                  }
+                }
+              }
+            }
+
+            // Update product with event discount if applicable
+            const productWithEvent = {
+              ...data.produk,
+              diskon: eventDiscount,
+              eventId: eventId,
+            };
+
+            addProductToSale(productWithEvent);
             setSearchTerm("");
+
+            // Show toast if there's an event discount
+            if (eventDiscount > 0) {
+              toast.success(
+                `Diskon event sebesar Rp. ${eventDiscount.toLocaleString()} diterapkan!`
+              );
+            }
           } else {
             toast.error(`Produk dengan barcode ${barcode} tidak ditemukan`);
           }
@@ -535,6 +642,24 @@ export default function SalesPage() {
       return false;
     }
     return true;
+  };
+
+  const calculateTotalDiscount = (
+    product: Produk & {
+      quantity: number;
+      diskon: number;
+      eventId?: number | null;
+      eventDiscount?: number;
+      eventName?: string;
+    }
+  ) => {
+    const productDiscount = product.diskon * product.quantity;
+
+    const eventDiscountAmount = product.eventDiscount
+      ? (product.eventDiscount / 100) * product.harga_jual
+      : 0;
+
+    return eventDiscountAmount * product.quantity + productDiscount;
   };
 
   return (
@@ -715,9 +840,18 @@ export default function SalesPage() {
                     <div>
                       <p className="font-semibold">{product.nama_produk}</p>
                       <p>Rp. {product.harga_jual.toLocaleString()}</p>
+
+                      {/* Event discount display */}
+                      {product.eventDiscount > 0 && (
+                        <p className="text-xs text-green-600">
+                          Event: {product.eventName} - Diskon{" "}
+                          {product.eventDiscount}%
+                        </p>
+                      )}
+
+                      {/* Product-specific discount input */}
                       <div className="flex items-center space-x-2 mt-1">
-                        <label className="text-sm">Diskon:</label>
-                        <span className="text-sm">Rp.</span>
+                        <label className="text-sm">Diskon Produk (%):</label>
                         <input
                           type="number"
                           value={product.diskon}
@@ -730,13 +864,15 @@ export default function SalesPage() {
                           }}
                           className="w-24 text-center"
                           min="0"
-                          max={product.harga_jual}
+                          max="100"
                         />
                       </div>
-                      {product.diskon > 0 && (
+
+                      {/* Total savings calculation */}
+                      {(product.diskon > 0 || product.eventDiscount > 0) && (
                         <p className="text-sm text-green-600">
-                          Hemat: Rp.{" "}
-                          {(product.diskon * product.quantity).toLocaleString()}
+                          Total Hemat: Rp.{" "}
+                          {calculateTotalDiscount(product).toLocaleString()}
                         </p>
                       )}
                     </div>

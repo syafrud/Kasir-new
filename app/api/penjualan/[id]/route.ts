@@ -1,3 +1,4 @@
+// api/penjualan/[id]
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db";
 
@@ -35,6 +36,15 @@ export async function GET(request: NextRequest) {
               select: {
                 nama_produk: true,
                 harga_jual: true,
+              },
+            },
+            event_produk: {
+              include: {
+                event: {
+                  select: {
+                    nama_event: true,
+                  },
+                },
               },
             },
           },
